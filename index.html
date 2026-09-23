@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money Muscle</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Comic Sans MS', 'Trebuchet MS', Verdana, sans-serif;
+    background: linear-gradient(180deg, #fff6e5 0%, #ffe8d6 100%);
+    color: #333;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 48px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  h1 {
+    text-align: center;
+    color: #6a3fa0;
+    font-size: 2rem;
+    margin: 8px 0 0;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #888;
+    margin: 4px 0 20px;
+    font-size: 1rem;
+  }
+
+  .amount-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+  }
+
+  .amount-card p {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    color: #888;
+  }
+
+  .amount-card .amount {
+    font-size: 2.6rem;
+    font-weight: bold;
+    color: #2e9e5b;
+  }
+
+  .bucket {
+    background: #fff;
+    border-radius: 20px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.08);
+    border: 3px solid transparent;
+  }
+
+  .bucket.save { border-color: #4fb0e8; }
+  .bucket.spend { border-color: #ff9a3c; }
+  .bucket.give { border-color: #ef5da8; }
+
+  .bucket-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .bucket-icon {
+    font-size: 1.8rem;
+  }
+
+  .bucket-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  .save .bucket-name { color: #2e86c1; }
+  .spend .bucket-name { color: #e8790c; }
+  .give .bucket-name { color: #d63384; }
+
+  .bucket-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .step-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .save .step-btn { background: #4fb0e8; }
+  .spend .step-btn { background: #ff9a3c; }
+  .give .step-btn { background: #ef5da8; }
+
+  .step-btn:active {
+    transform: scale(0.92);
+  }
+
+  .bucket-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #f4f4f4;
+    border-radius: 12px;
+    padding: 0 10px;
+  }
+
+  .bucket-input-wrap span {
+    font-size: 1.3rem;
+    color: #999;
+  }
+
+  .bucket-input-wrap input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 1.3rem;
+    padding: 10px 4px;
+    width: 100%;
+    text-align: right;
+    font-family: inherit;
+    color: #333;
+  }
+
+  .bucket-input-wrap input:focus {
+    outline: none;
+  }
+
+  .total-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 16px 20px;
+    text-align: center;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+  }
+
+  .total-card p {
+    margin: 0 0 4px;
+    color: #888;
+  }
+
+  .total-card .total-value {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+
+  .total-value.match { color: #2e9e5b; }
+  .total-value.mismatch { color: #e04b4b; }
+
+  .warning {
+    background: #ffe3e3;
+    border: 2px dashed #e04b4b;
+    color: #b02a2a;
+    border-radius: 16px;
+    padding: 14px 16px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1rem;
+  }
+
+  .success {
+    background: #e3f9e9;
+    border: 2px dashed #2e9e5b;
+    color: #1e7a44;
+    border-radius: 16px;
+    padding: 14px 16px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1rem;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <h1>💪 Money Muscle</h1>
+    <p class="subtitle">Give your money a job to do!</p>
+
+    <div class="amount-card">
+      <p>You have</p>
+      <div class="amount">$<span id="totalAmountDisplay">10</span></div>
+    </div>
+
+    <div class="bucket save">
+      <div class="bucket-header">
+        <span class="bucket-icon">🐷</span>
+        <span class="bucket-name">Save</span>
+      </div>
+      <div class="bucket-controls">
+        <button class="step-btn" data-bucket="save" data-dir="-1">−</button>
+        <div class="bucket-input-wrap">
+          <span>$</span>
+          <input type="number" id="save" min="0" step="1" value="0" inputmode="decimal">
+        </div>
+        <button class="step-btn" data-bucket="save" data-dir="1">+</button>
+      </div>
+    </div>
+
+    <div class="bucket spend">
+      <div class="bucket-header">
+        <span class="bucket-icon">🛍️</span>
+        <span class="bucket-name">Spend</span>
+      </div>
+      <div class="bucket-controls">
+        <button class="step-btn" data-bucket="spend" data-dir="-1">−</button>
+        <div class="bucket-input-wrap">
+          <span>$</span>
+          <input type="number" id="spend" min="0" step="1" value="0" inputmode="decimal">
+        </div>
+        <button class="step-btn" data-bucket="spend" data-dir="1">+</button>
+      </div>
+    </div>
+
+    <div class="bucket give">
+      <div class="bucket-header">
+        <span class="bucket-icon">❤️</span>
+        <span class="bucket-name">Give</span>
+      </div>
+      <div class="bucket-controls">
+        <button class="step-btn" data-bucket="give" data-dir="-1">−</button>
+        <div class="bucket-input-wrap">
+          <span>$</span>
+          <input type="number" id="give" min="0" step="1" value="0" inputmode="decimal">
+        </div>
+        <button class="step-btn" data-bucket="give" data-dir="1">+</button>
+      </div>
+    </div>
+
+    <div class="total-card">
+      <p>Your total</p>
+      <div class="total-value" id="totalValue">$0</div>
+    </div>
+
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const TOTAL_AMOUNT = 10;
+
+    const inputs = {
+      save: document.getElementById('save'),
+      spend: document.getElementById('spend'),
+      give: document.getElementById('give'),
+    };
+
+    const totalValueEl = document.getElementById('totalValue');
+    const messageEl = document.getElementById('message');
+    document.getElementById('totalAmountDisplay').textContent = TOTAL_AMOUNT;
+
+    function getVal(input) {
+      const n = parseFloat(input.value);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function update() {
+      const save = getVal(inputs.save);
+      const spend = getVal(inputs.spend);
+      const give = getVal(inputs.give);
+      const total = save + spend + give;
+
+      totalValueEl.textContent = '$' + total;
+
+      if (Math.abs(total - TOTAL_AMOUNT) < 0.001) {
+        totalValueEl.className = 'total-value match';
+        messageEl.innerHTML = '<div class="success">🎉 Nice! Your buckets add up to $' + TOTAL_AMOUNT + '!</div>';
+      } else {
+        totalValueEl.className = 'total-value mismatch';
+        const diff = TOTAL_AMOUNT - total;
+        const diffText = diff > 0
+          ? `You still have $${diff} left to put somewhere.`
+          : `You've put in $${Math.abs(diff)} too much!`;
+        messageEl.innerHTML = '<div class="warning">⚠️ Your buckets should add up to $' + TOTAL_AMOUNT + '. ' + diffText + '</div>';
+      }
+    }
+
+    Object.values(inputs).forEach(input => {
+      input.addEventListener('input', update);
+    });
+
+    document.querySelectorAll('.step-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const bucket = btn.dataset.bucket;
+        const dir = parseInt(btn.dataset.dir, 10);
+        const input = inputs[bucket];
+        const newVal = Math.max(0, getVal(input) + dir);
+        input.value = newVal;
+        update();
+      });
+    });
+
+    update();
+  </script>
+</body>
+</html>
