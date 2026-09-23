@@ -4,7 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Money Muscle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --mm-navy: #003561;
+    --mm-blue: #0073b9;
+    --mm-blue-dark: #005b98;
+    --mm-blue-bg: #ebf4fa;
+    --mm-green: #24a344;
+    --mm-green-dark: #106621;
+    --mm-green-bg: #eaf8ee;
+    --mm-orange: #e66f20;
+    --mm-orange-dark: #c95a14;
+    --mm-orange-bg: #fcf0e8;
+    --mm-magenta: #e30a8d;
+    --mm-magenta-dark: #c40879;
+    --mm-magenta-bg: #fef1f8;
+    --mm-yellow-bg: #fefae7;
+    --mm-amber: #faab19;
+    --mm-amber-bg: #fef0d1;
+    --mm-amber-dark: #804103;
+    --mm-red: #cc392f;
+    --mm-red-dark: #821d1a;
+    --mm-red-bg: #fcedeb;
+    --mm-gray-90: #1f2426;
+    --mm-gray-70: #495257;
+    --mm-gray-50: #8e999e;
+    --mm-gray-10: #f5f7f8;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -12,9 +42,9 @@
   body {
     margin: 0;
     min-height: 100vh;
-    font-family: 'Comic Sans MS', 'Trebuchet MS', Verdana, sans-serif;
-    background: linear-gradient(180deg, #fff6e5 0%, #ffe8d6 100%);
-    color: #333;
+    font-family: 'Nunito', 'Trebuchet MS', Verdana, sans-serif;
+    background: linear-gradient(180deg, var(--mm-blue-bg) 0%, var(--mm-green-bg) 100%);
+    color: var(--mm-gray-90);
     display: flex;
     justify-content: center;
     padding: 24px 16px 48px;
@@ -27,16 +57,175 @@
 
   h1 {
     text-align: center;
-    color: #6a3fa0;
-    font-size: 2rem;
+    color: var(--mm-navy);
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-size: 2.1rem;
     margin: 8px 0 0;
   }
 
   .subtitle {
     text-align: center;
-    color: #888;
+    color: var(--mm-gray-70);
     margin: 4px 0 20px;
     font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .view-switcher {
+    display: flex;
+    gap: 10px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 6px;
+    margin-bottom: 20px;
+    box-shadow: 0 6px 0 rgba(0,53,97,0.12);
+  }
+
+  .view-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    padding: 12px 8px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    color: var(--mm-gray-50);
+    cursor: pointer;
+  }
+
+  .view-btn.active {
+    background: var(--mm-navy);
+    color: #fff;
+  }
+
+  .view {
+    display: none;
+  }
+
+  .view.active {
+    display: block;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
+    margin-bottom: 20px;
+  }
+
+  .card h2 {
+    margin: 0 0 14px;
+    font-size: 1.2rem;
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    color: var(--mm-navy);
+  }
+
+  .give-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .give-form .bucket-input-wrap {
+    flex: 1;
+  }
+
+  .give-btn {
+    border: none;
+    background: var(--mm-green);
+    color: #fff;
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 12px;
+    padding: 0 18px;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 0 var(--mm-green-dark);
+  }
+
+  .give-btn:active {
+    transform: scale(0.96);
+  }
+
+  .pending-note {
+    margin-top: 12px;
+    background: var(--mm-amber-bg);
+    border: 2px dashed var(--mm-amber);
+    color: var(--mm-amber-dark);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .totals-grid {
+    display: flex;
+    gap: 12px;
+  }
+
+  .total-pill {
+    flex: 1;
+    border-radius: 14px;
+    padding: 12px 8px;
+    text-align: center;
+    color: #fff;
+  }
+
+  .total-pill.save { background: var(--mm-blue); }
+  .total-pill.spend { background: var(--mm-orange); }
+  .total-pill.give { background: var(--mm-magenta); }
+
+  .total-pill .label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    opacity: 0.9;
+  }
+
+  .total-pill .amount {
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+
+  .round-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .round-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--mm-gray-10);
+    font-size: 0.95rem;
+  }
+
+  .round-list li:last-child {
+    border-bottom: none;
+  }
+
+  .round-amount {
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-weight: 700;
+    color: var(--mm-navy);
+  }
+
+  .round-split {
+    color: var(--mm-gray-70);
+    font-size: 0.9rem;
+    text-align: right;
+  }
+
+  .empty-note {
+    color: var(--mm-gray-50);
+    text-align: center;
+    padding: 8px 0;
   }
 
   .amount-card {
@@ -44,20 +233,22 @@
     border-radius: 20px;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.08);
+    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
     margin-bottom: 20px;
   }
 
   .amount-card p {
     margin: 0 0 4px;
     font-size: 1rem;
-    color: #888;
+    font-weight: 600;
+    color: var(--mm-gray-70);
   }
 
   .amount-card .amount {
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
     font-size: 2.6rem;
-    font-weight: bold;
-    color: #2e9e5b;
+    font-weight: 700;
+    color: var(--mm-green);
   }
 
   .bucket {
@@ -65,13 +256,13 @@
     border-radius: 20px;
     padding: 16px 20px;
     margin-bottom: 16px;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.08);
+    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
     border: 3px solid transparent;
   }
 
-  .bucket.save { border-color: #4fb0e8; }
-  .bucket.spend { border-color: #ff9a3c; }
-  .bucket.give { border-color: #ef5da8; }
+  .bucket.save { border-color: var(--mm-blue); }
+  .bucket.spend { border-color: var(--mm-orange); }
+  .bucket.give { border-color: var(--mm-magenta); }
 
   .bucket-header {
     display: flex;
@@ -85,13 +276,14 @@
   }
 
   .bucket-name {
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
     font-size: 1.2rem;
-    font-weight: bold;
+    font-weight: 700;
   }
 
-  .save .bucket-name { color: #2e86c1; }
-  .spend .bucket-name { color: #e8790c; }
-  .give .bucket-name { color: #d63384; }
+  .save .bucket-name { color: var(--mm-blue-dark); }
+  .spend .bucket-name { color: var(--mm-orange-dark); }
+  .give .bucket-name { color: var(--mm-magenta-dark); }
 
   .bucket-controls {
     display: flex;
@@ -111,9 +303,9 @@
     flex-shrink: 0;
   }
 
-  .save .step-btn { background: #4fb0e8; }
-  .spend .step-btn { background: #ff9a3c; }
-  .give .step-btn { background: #ef5da8; }
+  .save .step-btn { background: var(--mm-blue); }
+  .spend .step-btn { background: var(--mm-orange); }
+  .give .step-btn { background: var(--mm-magenta); }
 
   .step-btn:active {
     transform: scale(0.92);
@@ -123,14 +315,14 @@
     flex: 1;
     display: flex;
     align-items: center;
-    background: #f4f4f4;
+    background: var(--mm-gray-10);
     border-radius: 12px;
     padding: 0 10px;
   }
 
   .bucket-input-wrap span {
     font-size: 1.3rem;
-    color: #999;
+    color: var(--mm-gray-50);
   }
 
   .bucket-input-wrap input {
@@ -142,7 +334,7 @@
     width: 100%;
     text-align: right;
     font-family: inherit;
-    color: #333;
+    color: var(--mm-gray-90);
   }
 
   .bucket-input-wrap input:focus {
@@ -154,43 +346,139 @@
     border-radius: 20px;
     padding: 16px 20px;
     text-align: center;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.08);
+    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
     margin-bottom: 16px;
   }
 
   .total-card p {
     margin: 0 0 4px;
-    color: #888;
+    font-weight: 600;
+    color: var(--mm-gray-70);
   }
 
   .total-card .total-value {
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
     font-size: 2rem;
-    font-weight: bold;
+    font-weight: 700;
   }
 
-  .total-value.match { color: #2e9e5b; }
-  .total-value.mismatch { color: #e04b4b; }
+  .total-value.match { color: var(--mm-green); }
+  .total-value.mismatch { color: var(--mm-red); }
+
+  .split-btn {
+    display: block;
+    width: 100%;
+    border: none;
+    background: var(--mm-blue);
+    color: #fff;
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    border-radius: 14px;
+    padding: 14px 0;
+    margin-bottom: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--mm-blue-dark);
+  }
+
+  .split-btn:active {
+    transform: scale(0.97);
+  }
 
   .warning {
-    background: #ffe3e3;
-    border: 2px dashed #e04b4b;
-    color: #b02a2a;
+    background: var(--mm-red-bg);
+    border: 2px dashed var(--mm-red);
+    color: var(--mm-red-dark);
     border-radius: 16px;
     padding: 14px 16px;
     text-align: center;
-    font-weight: bold;
+    font-weight: 700;
     font-size: 1rem;
   }
 
-  .success {
-    background: #e3f9e9;
-    border: 2px dashed #2e9e5b;
-    color: #1e7a44;
-    border-radius: 16px;
-    padding: 14px 16px;
+  .no-money-note {
+    background: #fff;
+    border-radius: 20px;
+    padding: 30px 20px;
     text-align: center;
-    font-weight: bold;
-    font-size: 1rem;
+    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
+    color: var(--mm-gray-50);
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .celebration-card {
+    background: linear-gradient(135deg, var(--mm-magenta-bg) 0%, var(--mm-yellow-bg) 50%, var(--mm-green-bg) 100%);
+    border-radius: 24px;
+    padding: 32px 20px;
+    text-align: center;
+    box-shadow: 0 8px 0 rgba(0,53,97,0.10);
+    margin-bottom: 20px;
+    border: 3px dashed var(--mm-green);
+  }
+
+  .celebration-emojis {
+    font-size: 3rem;
+    margin-bottom: 8px;
+  }
+
+  .celebration-emojis span {
+    display: inline-block;
+    animation: bounce-emoji 0.6s ease-in-out infinite alternate;
+  }
+
+  @keyframes bounce-emoji {
+    from { transform: translateY(0) rotate(-6deg) scale(1); }
+    to { transform: translateY(-16px) rotate(6deg) scale(1.15); }
+  }
+
+  .celebration-card h2 {
+    margin: 6px 0 6px;
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    color: var(--mm-green-dark);
+    font-size: 1.7rem;
+  }
+
+  .celebration-card p {
+    margin: 0 0 16px;
+    color: var(--mm-gray-70);
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+
+  .celebration-breakdown {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+    font-weight: 700;
+    color: var(--mm-gray-90);
+  }
+
+  .celebration-breakdown span {
+    background: #fff;
+    border-radius: 10px;
+    padding: 6px 10px;
+    box-shadow: 0 3px 0 rgba(0,53,97,0.08);
+    font-size: 0.9rem;
+  }
+
+  .done-btn {
+    border: none;
+    background: var(--mm-green);
+    color: #fff;
+    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    border-radius: 14px;
+    padding: 14px 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--mm-green-dark);
+  }
+
+  .done-btn:active {
+    transform: scale(0.94);
   }
 </style>
 </head>
@@ -199,66 +487,282 @@
     <h1>💪 Money Muscle</h1>
     <p class="subtitle">Give your money a job to do!</p>
 
-    <div class="amount-card">
-      <p>You have</p>
-      <div class="amount">$<span id="totalAmountDisplay">10</span></div>
+    <div class="view-switcher">
+      <button class="view-btn" id="tabParent" data-view="parent">👨‍👩‍👧 Parent</button>
+      <button class="view-btn" id="tabKid" data-view="kid">🧒 Kid</button>
     </div>
 
-    <div class="bucket save">
-      <div class="bucket-header">
-        <span class="bucket-icon">🐷</span>
-        <span class="bucket-name">Save</span>
-      </div>
-      <div class="bucket-controls">
-        <button class="step-btn" data-bucket="save" data-dir="-1">−</button>
-        <div class="bucket-input-wrap">
-          <span>$</span>
-          <input type="number" id="save" min="0" step="1" value="0" inputmode="decimal">
+    <!-- PARENT VIEW -->
+    <div class="view" id="viewParent">
+      <div class="card">
+        <h2>Give Money</h2>
+        <div class="give-form">
+          <div class="bucket-input-wrap">
+            <span>$</span>
+            <input type="number" id="giveAmount" min="0" step="1" inputmode="decimal" placeholder="0">
+          </div>
+          <button class="give-btn" id="giveBtn">Give this money 💸</button>
         </div>
-        <button class="step-btn" data-bucket="save" data-dir="1">+</button>
+        <div class="pending-note" id="pendingNote" style="display:none;"></div>
       </div>
-    </div>
 
-    <div class="bucket spend">
-      <div class="bucket-header">
-        <span class="bucket-icon">🛍️</span>
-        <span class="bucket-name">Spend</span>
-      </div>
-      <div class="bucket-controls">
-        <button class="step-btn" data-bucket="spend" data-dir="-1">−</button>
-        <div class="bucket-input-wrap">
-          <span>$</span>
-          <input type="number" id="spend" min="0" step="1" value="0" inputmode="decimal">
+      <div class="card">
+        <h2>Totals So Far</h2>
+        <div class="totals-grid">
+          <div class="total-pill save">
+            <div class="label">🐷 Save</div>
+            <div class="amount" id="totalSave">$0</div>
+          </div>
+          <div class="total-pill spend">
+            <div class="label">🛍️ Spend</div>
+            <div class="amount" id="totalSpend">$0</div>
+          </div>
+          <div class="total-pill give">
+            <div class="label">❤️ Give</div>
+            <div class="amount" id="totalGive">$0</div>
+          </div>
         </div>
-        <button class="step-btn" data-bucket="spend" data-dir="1">+</button>
+      </div>
+
+      <div class="card">
+        <h2>Past Rounds</h2>
+        <ul class="round-list" id="roundList"></ul>
       </div>
     </div>
 
-    <div class="bucket give">
-      <div class="bucket-header">
-        <span class="bucket-icon">❤️</span>
-        <span class="bucket-name">Give</span>
-      </div>
-      <div class="bucket-controls">
-        <button class="step-btn" data-bucket="give" data-dir="-1">−</button>
-        <div class="bucket-input-wrap">
-          <span>$</span>
-          <input type="number" id="give" min="0" step="1" value="0" inputmode="decimal">
+    <!-- KID VIEW -->
+    <div class="view" id="viewKid">
+      <div class="card">
+        <h2>Your Totals</h2>
+        <div class="totals-grid">
+          <div class="total-pill save">
+            <div class="label">🐷 Save</div>
+            <div class="amount" id="kidTotalSave">$0</div>
+          </div>
+          <div class="total-pill spend">
+            <div class="label">🛍️ Spend</div>
+            <div class="amount" id="kidTotalSpend">$0</div>
+          </div>
+          <div class="total-pill give">
+            <div class="label">❤️ Give</div>
+            <div class="amount" id="kidTotalGive">$0</div>
+          </div>
         </div>
-        <button class="step-btn" data-bucket="give" data-dir="1">+</button>
+      </div>
+
+      <div id="kidCelebration" class="celebration-card" style="display:none;">
+        <div class="celebration-emojis">
+          <span style="animation-delay:0s">🎉</span>
+          <span style="animation-delay:0.15s">🥳</span>
+          <span style="animation-delay:0.3s">🎊</span>
+          <span style="animation-delay:0.15s">⭐</span>
+          <span style="animation-delay:0s">💰</span>
+        </div>
+        <h2>You did it!</h2>
+        <p id="celebrationText">You split your money like a champ!</p>
+        <div class="celebration-breakdown" id="celebrationBreakdown"></div>
+        <button class="done-btn" id="celebrationDoneBtn">Awesome! 🙌</button>
+      </div>
+
+      <div id="kidNoMoney" class="no-money-note" style="display:none;">
+        🙋 Ask your parent to give you some money to split!
+      </div>
+
+      <div id="kidSplitArea" style="display:none;">
+        <div class="amount-card">
+          <p>You have</p>
+          <div class="amount">$<span id="totalAmountDisplay">0</span></div>
+        </div>
+
+        <div class="bucket save">
+          <div class="bucket-header">
+            <span class="bucket-icon">🐷</span>
+            <span class="bucket-name">Save</span>
+          </div>
+          <div class="bucket-controls">
+            <button class="step-btn" data-bucket="save" data-dir="-1">−</button>
+            <div class="bucket-input-wrap">
+              <span>$</span>
+              <input type="number" id="save" min="0" step="1" value="0" inputmode="decimal">
+            </div>
+            <button class="step-btn" data-bucket="save" data-dir="1">+</button>
+          </div>
+        </div>
+
+        <div class="bucket spend">
+          <div class="bucket-header">
+            <span class="bucket-icon">🛍️</span>
+            <span class="bucket-name">Spend</span>
+          </div>
+          <div class="bucket-controls">
+            <button class="step-btn" data-bucket="spend" data-dir="-1">−</button>
+            <div class="bucket-input-wrap">
+              <span>$</span>
+              <input type="number" id="spend" min="0" step="1" value="0" inputmode="decimal">
+            </div>
+            <button class="step-btn" data-bucket="spend" data-dir="1">+</button>
+          </div>
+        </div>
+
+        <div class="bucket give">
+          <div class="bucket-header">
+            <span class="bucket-icon">❤️</span>
+            <span class="bucket-name">Give</span>
+          </div>
+          <div class="bucket-controls">
+            <button class="step-btn" data-bucket="give" data-dir="-1">−</button>
+            <div class="bucket-input-wrap">
+              <span>$</span>
+              <input type="number" id="give" min="0" step="1" value="0" inputmode="decimal">
+            </div>
+            <button class="step-btn" data-bucket="give" data-dir="1">+</button>
+          </div>
+        </div>
+
+        <div class="total-card">
+          <p>Your total</p>
+          <div class="total-value" id="totalValue">$0</div>
+        </div>
+
+        <button class="split-btn" id="splitBtn">Split it! 💪</button>
+
+        <div id="message"></div>
       </div>
     </div>
-
-    <div class="total-card">
-      <p>Your total</p>
-      <div class="total-value" id="totalValue">$0</div>
-    </div>
-
-    <div id="message"></div>
   </div>
 
   <script>
-    const TOTAL_AMOUNT = 10;
+    const ROUNDS_KEY = 'mm_rounds';
+    const CURRENT_AMOUNT_KEY = 'mm_currentAmount';
+    const ACTIVE_VIEW_KEY = 'mm_activeView';
+
+    function loadRounds() {
+      try {
+        return JSON.parse(localStorage.getItem(ROUNDS_KEY)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveRounds(rounds) {
+      localStorage.setItem(ROUNDS_KEY, JSON.stringify(rounds));
+    }
+
+    function getCurrentAmount() {
+      const raw = localStorage.getItem(CURRENT_AMOUNT_KEY);
+      if (raw === null) return null;
+      const n = parseFloat(raw);
+      return isNaN(n) ? null : n;
+    }
+
+    function setCurrentAmount(amount) {
+      localStorage.setItem(CURRENT_AMOUNT_KEY, String(amount));
+    }
+
+    function clearCurrentAmount() {
+      localStorage.removeItem(CURRENT_AMOUNT_KEY);
+    }
+
+    function computeTotals(rounds) {
+      return rounds.reduce((acc, r) => {
+        acc.save += r.save;
+        acc.spend += r.spend;
+        acc.give += r.give;
+        return acc;
+      }, { save: 0, spend: 0, give: 0 });
+    }
+
+    // ---------- View switching ----------
+
+    const viewBtns = document.querySelectorAll('.view-btn');
+    const views = {
+      parent: document.getElementById('viewParent'),
+      kid: document.getElementById('viewKid'),
+    };
+
+    function switchView(view) {
+      localStorage.setItem(ACTIVE_VIEW_KEY, view);
+      viewBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+      Object.entries(views).forEach(([key, el]) => el.classList.toggle('active', key === view));
+      if (view === 'parent') {
+        renderParentView();
+      } else {
+        renderKidView();
+      }
+    }
+
+    viewBtns.forEach(btn => {
+      btn.addEventListener('click', () => switchView(btn.dataset.view));
+    });
+
+    // ---------- Parent view ----------
+
+    const giveAmountInput = document.getElementById('giveAmount');
+    const giveBtn = document.getElementById('giveBtn');
+    const pendingNote = document.getElementById('pendingNote');
+    const totalSaveEl = document.getElementById('totalSave');
+    const totalSpendEl = document.getElementById('totalSpend');
+    const totalGiveEl = document.getElementById('totalGive');
+    const roundListEl = document.getElementById('roundList');
+
+    function renderParentView() {
+      const rounds = loadRounds();
+
+      const totals = computeTotals(rounds);
+
+      totalSaveEl.textContent = '$' + totals.save;
+      totalSpendEl.textContent = '$' + totals.spend;
+      totalGiveEl.textContent = '$' + totals.give;
+
+      if (rounds.length === 0) {
+        roundListEl.innerHTML = '<li class="empty-note">No rounds yet.</li>';
+      } else {
+        roundListEl.innerHTML = rounds
+          .slice()
+          .reverse()
+          .map(r => `
+            <li>
+              <span class="round-amount">$${r.amount}</span>
+              <span class="round-split">🐷$${r.save} 🛍️$${r.spend} ❤️$${r.give}</span>
+            </li>
+          `)
+          .join('');
+      }
+
+      const currentAmount = getCurrentAmount();
+      if (currentAmount !== null) {
+        pendingNote.style.display = 'block';
+        pendingNote.textContent = `⏳ Waiting for the kid to split $${currentAmount}...`;
+      } else {
+        pendingNote.style.display = 'none';
+      }
+    }
+
+    giveBtn.addEventListener('click', () => {
+      const amount = parseFloat(giveAmountInput.value);
+      if (isNaN(amount) || amount <= 0) {
+        return;
+      }
+      setCurrentAmount(amount);
+      giveAmountInput.value = '';
+      renderParentView();
+    });
+
+    // ---------- Kid view ----------
+
+    const kidNoMoney = document.getElementById('kidNoMoney');
+    const kidSplitArea = document.getElementById('kidSplitArea');
+    const kidCelebration = document.getElementById('kidCelebration');
+    const celebrationText = document.getElementById('celebrationText');
+    const celebrationBreakdown = document.getElementById('celebrationBreakdown');
+    const celebrationDoneBtn = document.getElementById('celebrationDoneBtn');
+    const totalAmountDisplay = document.getElementById('totalAmountDisplay');
+    const totalValueEl = document.getElementById('totalValue');
+    const messageEl = document.getElementById('message');
+    const splitBtn = document.getElementById('splitBtn');
+    const kidTotalSaveEl = document.getElementById('kidTotalSave');
+    const kidTotalSpendEl = document.getElementById('kidTotalSpend');
+    const kidTotalGiveEl = document.getElementById('kidTotalGive');
 
     const inputs = {
       save: document.getElementById('save'),
@@ -266,52 +770,137 @@
       give: document.getElementById('give'),
     };
 
-    const totalValueEl = document.getElementById('totalValue');
-    const messageEl = document.getElementById('message');
-    document.getElementById('totalAmountDisplay').textContent = TOTAL_AMOUNT;
+    let celebrating = false;
 
     function getVal(input) {
       const n = parseFloat(input.value);
       return isNaN(n) ? 0 : n;
     }
 
-    function update() {
+    function renderKidTotals() {
+      const totals = computeTotals(loadRounds());
+      kidTotalSaveEl.textContent = '$' + totals.save;
+      kidTotalSpendEl.textContent = '$' + totals.spend;
+      kidTotalGiveEl.textContent = '$' + totals.give;
+    }
+
+    function renderKidView() {
+      renderKidTotals();
+
+      if (celebrating) {
+        kidNoMoney.style.display = 'none';
+        kidSplitArea.style.display = 'none';
+        kidCelebration.style.display = 'block';
+        return;
+      }
+
+      kidCelebration.style.display = 'none';
+
+      const currentAmount = getCurrentAmount();
+
+      if (currentAmount === null) {
+        kidNoMoney.style.display = 'block';
+        kidSplitArea.style.display = 'none';
+        return;
+      }
+
+      kidNoMoney.style.display = 'none';
+      kidSplitArea.style.display = 'block';
+      totalAmountDisplay.textContent = currentAmount;
+
+      inputs.save.value = 0;
+      inputs.spend.value = 0;
+      inputs.give.value = 0;
+      messageEl.innerHTML = '';
+
+      updateKidTotalDisplay();
+    }
+
+    function showCelebration(round) {
+      celebrationText.textContent = `You split $${round.amount} like a champ!`;
+      celebrationBreakdown.innerHTML = `
+        <span>🐷 Save $${round.save}</span>
+        <span>🛍️ Spend $${round.spend}</span>
+        <span>❤️ Give $${round.give}</span>
+      `;
+      celebrating = true;
+      renderKidView();
+    }
+
+    celebrationDoneBtn.addEventListener('click', () => {
+      celebrating = false;
+      renderKidView();
+    });
+
+    function updateKidTotalDisplay() {
       const save = getVal(inputs.save);
       const spend = getVal(inputs.spend);
       const give = getVal(inputs.give);
       const total = save + spend + give;
 
       totalValueEl.textContent = '$' + total;
+      totalValueEl.className = 'total-value';
+    }
 
-      if (Math.abs(total - TOTAL_AMOUNT) < 0.001) {
+    splitBtn.addEventListener('click', () => {
+      const currentAmount = getCurrentAmount();
+      if (currentAmount === null) return;
+
+      const save = getVal(inputs.save);
+      const spend = getVal(inputs.spend);
+      const give = getVal(inputs.give);
+      const total = save + spend + give;
+
+      if (Math.abs(total - currentAmount) < 0.001) {
         totalValueEl.className = 'total-value match';
-        messageEl.innerHTML = '<div class="success">🎉 Nice! Your buckets add up to $' + TOTAL_AMOUNT + '!</div>';
+        messageEl.innerHTML = '';
+
+        const rounds = loadRounds();
+        rounds.push({
+          id: Date.now(),
+          amount: currentAmount,
+          save,
+          spend,
+          give,
+          completedAt: new Date().toISOString(),
+        });
+        saveRounds(rounds);
+        clearCurrentAmount();
+
+        showCelebration({ amount: currentAmount, save, spend, give });
       } else {
         totalValueEl.className = 'total-value mismatch';
-        const diff = TOTAL_AMOUNT - total;
+        const diff = currentAmount - total;
         const diffText = diff > 0
           ? `You still have $${diff} left to put somewhere.`
           : `You've put in $${Math.abs(diff)} too much!`;
-        messageEl.innerHTML = '<div class="warning">⚠️ Your buckets should add up to $' + TOTAL_AMOUNT + '. ' + diffText + '</div>';
+        messageEl.innerHTML = '<div class="warning">⚠️ Your buckets should add up to $' + currentAmount + '. ' + diffText + '</div>';
       }
-    }
-
-    Object.values(inputs).forEach(input => {
-      input.addEventListener('input', update);
     });
 
-    document.querySelectorAll('.step-btn').forEach(btn => {
+    Object.values(inputs).forEach(input => {
+      input.addEventListener('input', () => {
+        messageEl.innerHTML = '';
+        updateKidTotalDisplay();
+      });
+    });
+
+    document.querySelectorAll('#kidSplitArea .step-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const bucket = btn.dataset.bucket;
         const dir = parseInt(btn.dataset.dir, 10);
         const input = inputs[bucket];
         const newVal = Math.max(0, getVal(input) + dir);
         input.value = newVal;
-        update();
+        messageEl.innerHTML = '';
+        updateKidTotalDisplay();
       });
     });
 
-    update();
+    // ---------- Init ----------
+
+    const initialView = localStorage.getItem(ACTIVE_VIEW_KEY) === 'kid' ? 'kid' : 'parent';
+    switchView(initialView);
   </script>
 </body>
 </html>
