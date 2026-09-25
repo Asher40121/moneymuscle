@@ -6,16 +6,15 @@
 <title>Money Muscle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --mm-navy: #003561;
-    --mm-blue: #0073b9;
-    --mm-blue-dark: #005b98;
+    --mm-blue: #1467e0;
+    --mm-blue-dark: #0e4fb0;
     --mm-blue-bg: #ebf4fa;
-    --mm-green: #24a344;
-    --mm-green-dark: #106621;
-    --mm-green-bg: #eaf8ee;
+    --mm-green: #1fa34a;
+    --mm-green-dark: #12742f;
+    --mm-green-bg: #e8f7ed;
     --mm-orange: #e66f20;
     --mm-orange-dark: #c95a14;
     --mm-orange-bg: #fcf0e8;
@@ -42,8 +41,8 @@
   body {
     margin: 0;
     min-height: 100vh;
-    font-family: 'Nunito', 'Trebuchet MS', Verdana, sans-serif;
-    background: linear-gradient(180deg, var(--mm-blue-bg) 0%, var(--mm-green-bg) 100%);
+    font-family: 'Poppins', -apple-system, sans-serif;
+    background: linear-gradient(180deg, #ffffff 0%, var(--mm-green-bg) 100%);
     color: var(--mm-gray-90);
     display: flex;
     justify-content: center;
@@ -55,18 +54,28 @@
     max-width: 480px;
   }
 
+  .header-band {
+    background: linear-gradient(135deg, var(--mm-green) 0%, var(--mm-green-dark) 100%);
+    border-radius: 20px;
+    padding: 22px 20px 18px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 6px 0 rgba(18,116,47,0.22);
+  }
+
   h1 {
     text-align: center;
-    color: var(--mm-navy);
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
     font-size: 2.1rem;
-    margin: 8px 0 0;
+    margin: 0;
   }
 
   .subtitle {
     text-align: center;
-    color: var(--mm-gray-70);
-    margin: 4px 0 20px;
+    color: rgba(255,255,255,0.85);
+    margin: 4px 0 0;
     font-size: 1rem;
     font-weight: 600;
   }
@@ -78,7 +87,7 @@
     border-radius: 16px;
     padding: 6px;
     margin-bottom: 20px;
-    box-shadow: 0 6px 0 rgba(0,53,97,0.12);
+    box-shadow: 0 6px 0 rgba(18,116,47,0.12);
   }
 
   .view-btn {
@@ -89,13 +98,13 @@
     padding: 12px 8px;
     font-size: 1.05rem;
     font-weight: 700;
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     color: var(--mm-gray-50);
     cursor: pointer;
   }
 
   .view-btn.active {
-    background: var(--mm-navy);
+    background: var(--mm-blue);
     color: #fff;
   }
 
@@ -111,15 +120,120 @@
     background: #fff;
     border-radius: 20px;
     padding: 20px;
-    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
+    box-shadow: 0 6px 0 rgba(18,116,47,0.10);
     margin-bottom: 20px;
   }
 
   .card h2 {
     margin: 0 0 14px;
     font-size: 1.2rem;
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
-    color: var(--mm-navy);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    color: var(--mm-gray-90);
+  }
+
+  .kid-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .kid-pill {
+    border: none;
+    background: var(--mm-gray-10);
+    color: var(--mm-gray-70);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 999px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  .kid-pill.active {
+    background: var(--mm-blue);
+    color: #fff;
+  }
+
+  .kid-pill-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .kid-delete-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: var(--mm-red-bg);
+    color: var(--mm-red-dark);
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .kid-delete-btn:active {
+    transform: scale(0.9);
+  }
+
+  .add-kid-form {
+    display: flex;
+    gap: 8px;
+  }
+
+  .add-kid-form input {
+    flex: 1;
+    border: 2px solid var(--mm-gray-10);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    min-width: 0;
+  }
+
+  .add-kid-form input:focus {
+    outline: none;
+    border-color: var(--mm-blue);
+  }
+
+  .add-kid-btn {
+    border: none;
+    background: var(--mm-blue);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 12px;
+    padding: 0 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 0 var(--mm-blue-dark);
+  }
+
+  .add-kid-btn:active {
+    transform: scale(0.96);
+  }
+
+  .empty-kids-note {
+    color: var(--mm-gray-50);
+    text-align: center;
+    padding: 12px 0;
+    font-weight: 600;
+  }
+
+  .giving-to-label {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--mm-gray-70);
+  }
+
+  .giving-to-label strong {
+    color: var(--mm-green-dark);
   }
 
   .give-form {
@@ -136,7 +250,7 @@
     border: none;
     background: var(--mm-green);
     color: #fff;
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 1rem;
     border-radius: 12px;
@@ -150,8 +264,19 @@
     transform: scale(0.96);
   }
 
-  .pending-note {
-    margin-top: 12px;
+  .give-btn:disabled {
+    background: var(--mm-gray-50);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .pending-list {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+  }
+
+  .pending-list li {
     background: var(--mm-amber-bg);
     border: 2px dashed var(--mm-amber);
     color: var(--mm-amber-dark);
@@ -160,6 +285,119 @@
     font-size: 0.95rem;
     font-weight: 600;
     text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .pending-list li:last-child {
+    margin-bottom: 0;
+  }
+
+  .streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--mm-amber-bg);
+    color: var(--mm-amber-dark);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+  }
+
+  .goal-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--mm-gray-70);
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  .goal-progress-track {
+    background: var(--mm-gray-10);
+    border-radius: 999px;
+    height: 18px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+
+  .goal-progress-fill {
+    background: var(--mm-blue);
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  .goal-progress-fill.complete {
+    background: var(--mm-green);
+  }
+
+  .goal-name {
+    font-family: 'Poppins', sans-serif;
+    color: var(--mm-green-dark);
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .goal-edit-link {
+    background: none;
+    border: none;
+    color: var(--mm-blue);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    margin-top: 10px;
+  }
+
+  .goal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .goal-form-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .goal-form input {
+    flex: 1;
+    border: 2px solid var(--mm-gray-10);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    min-width: 0;
+  }
+
+  .goal-form input:focus {
+    outline: none;
+    border-color: var(--mm-blue);
+  }
+
+  .goal-save-btn {
+    border: none;
+    background: var(--mm-blue);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 12px;
+    padding: 10px 0;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--mm-blue-dark);
+  }
+
+  .goal-save-btn:active {
+    transform: scale(0.97);
+  }
+
+  .goal-none-note {
+    color: var(--mm-gray-50);
+    font-weight: 600;
   }
 
   .totals-grid {
@@ -186,7 +424,7 @@
   }
 
   .total-pill .amount {
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 1.4rem;
     font-weight: 700;
   }
@@ -198,9 +436,6 @@
   }
 
   .round-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: 10px 0;
     border-bottom: 1px solid var(--mm-gray-10);
     font-size: 0.95rem;
@@ -210,16 +445,358 @@
     border-bottom: none;
   }
 
+  .round-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   .round-amount {
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
-    color: var(--mm-navy);
+    color: var(--mm-gray-90);
   }
 
   .round-split {
     color: var(--mm-gray-70);
     font-size: 0.9rem;
     text-align: right;
+  }
+
+  .round-note {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--mm-gray-50);
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  .chore-price-input {
+    flex: 0 0 70px !important;
+  }
+
+  .chore-manage-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .chore-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .chore-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--mm-gray-10);
+  }
+
+  .chore-item:last-child {
+    border-bottom: none;
+  }
+
+  .chore-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .chore-name {
+    font-weight: 700;
+    color: var(--mm-gray-90);
+  }
+
+  .chore-price {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    color: var(--mm-green-dark);
+  }
+
+  .chore-done-btn {
+    border: none;
+    background: var(--mm-blue);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--mm-blue-dark);
+  }
+
+  .chore-done-btn:active {
+    transform: scale(0.96);
+  }
+
+  .chore-pending-badge {
+    background: var(--mm-amber-bg);
+    color: var(--mm-amber-dark);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .chore-composer-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .chore-submit-btn {
+    flex: 1;
+    border: none;
+    background: var(--mm-green);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--mm-green-dark);
+  }
+
+  .chore-submit-btn:active {
+    transform: scale(0.97);
+  }
+
+  .chore-cancel-btn {
+    border: none;
+    background: var(--mm-gray-10);
+    color: var(--mm-gray-70);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+  }
+
+  .chore-notification-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .chore-notification-row {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--mm-gray-10);
+  }
+
+  .chore-notification-row:last-child {
+    border-bottom: none;
+  }
+
+  .chore-notification-info {
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    color: var(--mm-gray-90);
+    line-height: 1.4;
+  }
+
+  .chore-photo-preview {
+    display: block;
+    width: 100%;
+    max-width: 220px;
+    border-radius: 14px;
+    margin-top: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(18,116,47,0.10);
+  }
+
+  .photo-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 1000;
+    cursor: pointer;
+  }
+
+  .photo-lightbox.open {
+    display: flex;
+  }
+
+  .photo-lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    cursor: default;
+  }
+
+  .chore-notification-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .chore-pay-btn {
+    flex: 1;
+    border: none;
+    background: var(--mm-green);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--mm-green-dark);
+  }
+
+  .chore-pay-btn:active {
+    transform: scale(0.97);
+  }
+
+  .chore-dismiss-btn {
+    border: none;
+    background: none;
+    color: var(--mm-blue);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 10px;
+  }
+
+  .chore-notification-actions.secondary {
+    margin-top: 8px;
+  }
+
+  .chore-notification-actions.secondary button {
+    flex: 1;
+    text-align: center;
+  }
+
+  .chore-redo-btn {
+    border: none;
+    background: var(--mm-orange-bg);
+    color: var(--mm-orange-dark);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+
+  .chore-redo-send-btn {
+    flex: 1;
+    border: none;
+    background: var(--mm-orange);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--mm-orange-dark);
+  }
+
+  .chore-redo-send-btn:active {
+    transform: scale(0.97);
+  }
+
+  .chore-redo-note {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--mm-orange-dark);
+    background: var(--mm-orange-bg);
+    border-radius: 10px;
+    padding: 8px 10px;
+  }
+
+  .chore-done-this-week-badge {
+    background: var(--mm-green-bg);
+    color: var(--mm-green-dark);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .chore-freq-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--mm-blue);
+    background: var(--mm-blue-bg);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  .chore-frequency-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--mm-gray-70);
+  }
+
+  .chore-frequency-select {
+    flex: 1;
+    border: 2px solid var(--mm-gray-10);
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    color: var(--mm-gray-90);
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .chore-frequency-select:focus {
+    outline: none;
+    border-color: var(--mm-blue);
+  }
+
+  .chore-message-card {
+    background: var(--mm-green-bg);
+    border: 2px dashed var(--mm-green);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .chore-message-card + .chore-message-card {
+    margin-top: -4px;
+  }
+
+  .chore-message-text {
+    color: var(--mm-green-dark);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .chore-message-ack-btn {
+    border: none;
+    background: var(--mm-green);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--mm-green-dark);
+  }
+
+  .chore-message-ack-btn:active {
+    transform: scale(0.96);
   }
 
   .empty-note {
@@ -233,7 +810,7 @@
     border-radius: 20px;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
+    box-shadow: 0 6px 0 rgba(18,116,47,0.10);
     margin-bottom: 20px;
   }
 
@@ -245,7 +822,7 @@
   }
 
   .amount-card .amount {
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 2.6rem;
     font-weight: 700;
     color: var(--mm-green);
@@ -256,7 +833,7 @@
     border-radius: 20px;
     padding: 16px 20px;
     margin-bottom: 16px;
-    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
+    box-shadow: 0 6px 0 rgba(18,116,47,0.10);
     border: 3px solid transparent;
   }
 
@@ -276,7 +853,7 @@
   }
 
   .bucket-name {
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 1.2rem;
     font-weight: 700;
   }
@@ -341,44 +918,142 @@
     outline: none;
   }
 
-  .total-card {
-    background: #fff;
-    border-radius: 20px;
-    padding: 16px 20px;
-    text-align: center;
-    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
-    margin-bottom: 16px;
+  .note-input-wrap {
+    margin-top: 10px;
   }
 
-  .total-card p {
-    margin: 0 0 4px;
-    font-weight: 600;
+  .note-input-wrap label {
+    font-size: 0.8rem;
+    color: var(--mm-gray-70);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .note-input-wrap input {
+    width: 100%;
+    border: 2px solid var(--mm-gray-10);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  .note-input-wrap input:focus {
+    outline: none;
+    border-color: var(--mm-blue);
+  }
+
+  .photo-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .photo-input {
+    display: none;
+  }
+
+  .photo-label {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    background-color: #fff;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px dashed var(--mm-gray-50);
+    flex-shrink: 0;
+    text-align: center;
+    padding: 4px;
+  }
+
+  .photo-label.has-photo {
+    border-style: solid;
+  }
+
+  .save .photo-label.has-photo { border-color: var(--mm-blue); }
+  .give .photo-label.has-photo { border-color: var(--mm-magenta); }
+
+  .photo-placeholder {
+    font-size: 0.68rem;
+    color: var(--mm-gray-70);
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .photo-label.has-photo .photo-placeholder {
+    display: none;
+  }
+
+  .photo-remove-btn {
+    background: none;
+    border: none;
+    color: var(--mm-blue);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .round-thumbs {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .round-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    box-shadow: 0 2px 0 rgba(18,116,47,0.10);
+  }
+
+  .save-goal-mini {
+    margin-top: 12px;
+  }
+
+  .save-goal-mini .goal-meta {
+    margin-top: 6px;
+    font-size: 0.85rem;
+  }
+
+  .save-goal-mini .goal-progress-track {
+    height: 14px;
+    margin-top: 6px;
+  }
+
+  .remaining-note {
+    margin-top: 12px;
+    text-align: right;
+    font-size: 0.95rem;
+    font-weight: 700;
     color: var(--mm-gray-70);
   }
 
-  .total-card .total-value {
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
-    font-size: 2rem;
-    font-weight: 700;
-  }
-
-  .total-value.match { color: var(--mm-green); }
-  .total-value.mismatch { color: var(--mm-red); }
+  .remaining-note.final.match { color: var(--mm-green); }
+  .remaining-note.final.mismatch { color: var(--mm-red); }
 
   .split-btn {
     display: block;
     width: 100%;
     border: none;
-    background: var(--mm-blue);
+    background: var(--mm-green);
     color: #fff;
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 1.15rem;
     border-radius: 14px;
     padding: 14px 0;
     margin-bottom: 16px;
     cursor: pointer;
-    box-shadow: 0 4px 0 var(--mm-blue-dark);
+    box-shadow: 0 4px 0 var(--mm-green-dark);
   }
 
   .split-btn:active {
@@ -401,7 +1076,7 @@
     border-radius: 20px;
     padding: 30px 20px;
     text-align: center;
-    box-shadow: 0 6px 0 rgba(0,53,97,0.10);
+    box-shadow: 0 6px 0 rgba(18,116,47,0.10);
     color: var(--mm-gray-50);
     font-weight: 600;
     font-size: 1.1rem;
@@ -412,7 +1087,7 @@
     border-radius: 24px;
     padding: 32px 20px;
     text-align: center;
-    box-shadow: 0 8px 0 rgba(0,53,97,0.10);
+    box-shadow: 0 8px 0 rgba(18,116,47,0.10);
     margin-bottom: 20px;
     border: 3px dashed var(--mm-green);
   }
@@ -434,7 +1109,7 @@
 
   .celebration-card h2 {
     margin: 6px 0 6px;
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     color: var(--mm-green-dark);
     font-size: 1.7rem;
   }
@@ -444,6 +1119,15 @@
     color: var(--mm-gray-70);
     font-weight: 600;
     font-size: 1.05rem;
+  }
+
+  .goal-celebration-card {
+    border-color: var(--mm-amber);
+    background: linear-gradient(135deg, var(--mm-amber-bg) 0%, var(--mm-yellow-bg) 50%, var(--mm-green-bg) 100%);
+  }
+
+  .goal-celebration-card h2 {
+    color: var(--mm-amber-dark);
   }
 
   .celebration-breakdown {
@@ -460,7 +1144,7 @@
     background: #fff;
     border-radius: 10px;
     padding: 6px 10px;
-    box-shadow: 0 3px 0 rgba(0,53,97,0.08);
+    box-shadow: 0 3px 0 rgba(18,116,47,0.08);
     font-size: 0.9rem;
   }
 
@@ -468,7 +1152,7 @@
     border: none;
     background: var(--mm-green);
     color: #fff;
-    font-family: 'Baloo 2', 'Nunito', sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 700;
     font-size: 1.15rem;
     border-radius: 14px;
@@ -484,8 +1168,10 @@
 </head>
 <body>
   <div class="app">
-    <h1>💪 Money Muscle</h1>
-    <p class="subtitle">Give your money a job to do!</p>
+    <div class="header-band">
+      <h1>💪 Money Muscle</h1>
+      <p class="subtitle">Give your money a job to do!</p>
+    </div>
 
     <div class="view-switcher">
       <button class="view-btn" id="tabParent" data-view="parent">👨‍👩‍👧 Parent</button>
@@ -495,7 +1181,41 @@
     <!-- PARENT VIEW -->
     <div class="view" id="viewParent">
       <div class="card">
+        <h2>Your Kids</h2>
+        <div class="kid-pills" id="parentKidPills"></div>
+        <div class="add-kid-form">
+          <input type="text" id="newKidName" placeholder="Kid's name" maxlength="30">
+          <button class="add-kid-btn" id="addKidBtn">+ Add Kid</button>
+        </div>
+      </div>
+
+      <div class="card" id="choresCard">
+        <h2>Chores</h2>
+        <ul class="chore-manage-list round-list" id="choreManageList"></ul>
+        <div class="add-kid-form">
+          <input type="text" id="newChoreName" placeholder="Chore name" maxlength="40">
+          <input type="number" id="newChorePrice" class="chore-price-input" placeholder="$" min="0" step="0.5">
+          <button class="add-kid-btn" id="addChoreBtn">+ Add</button>
+        </div>
+        <label class="chore-frequency-label">
+          How often?
+          <select id="newChoreFrequency" class="chore-frequency-select">
+            <option value="anytime" selected>Anytime</option>
+            <option value="daily">Repeats daily</option>
+            <option value="weekly">Repeats weekly</option>
+            <option value="monthly">Repeats monthly</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="card" id="choreNotificationsCard" style="display:none;">
+        <h2>🔔 Chore Notifications</h2>
+        <ul class="chore-notification-list" id="choreNotificationList"></ul>
+      </div>
+
+      <div class="card" id="giveCard">
         <h2>Give Money</h2>
+        <p class="giving-to-label" id="givingToLabel" style="display:none;">Giving to: <strong id="givingToName"></strong></p>
         <div class="give-form">
           <div class="bucket-input-wrap">
             <span>$</span>
@@ -503,12 +1223,27 @@
           </div>
           <button class="give-btn" id="giveBtn">Give this money 💸</button>
         </div>
-        <div class="pending-note" id="pendingNote" style="display:none;"></div>
+        <ul class="pending-list" id="pendingList"></ul>
+      </div>
+
+      <div class="card" id="streakGoalCard">
+        <h2>Streak &amp; Savings Goal</h2>
+        <div class="streak-badge" id="parentStreakBadge">🔥 0-day streak</div>
+        <div id="parentGoalDisplay"></div>
+      </div>
+
+      <div class="card" id="savingsWinsCard">
+        <h2>🏆 Savings Wins</h2>
+        <ul class="round-list" id="parentSavingsWinsList"></ul>
       </div>
 
       <div class="card">
         <h2>Totals So Far</h2>
         <div class="totals-grid">
+          <div class="total-pill give">
+            <div class="label">❤️ Give</div>
+            <div class="amount" id="totalGive">$0</div>
+          </div>
           <div class="total-pill save">
             <div class="label">🐷 Save</div>
             <div class="amount" id="totalSave">$0</div>
@@ -516,10 +1251,6 @@
           <div class="total-pill spend">
             <div class="label">🛍️ Spend</div>
             <div class="amount" id="totalSpend">$0</div>
-          </div>
-          <div class="total-pill give">
-            <div class="label">❤️ Give</div>
-            <div class="amount" id="totalGive">$0</div>
           </div>
         </div>
       </div>
@@ -532,135 +1263,253 @@
 
     <!-- KID VIEW -->
     <div class="view" id="viewKid">
-      <div class="card">
-        <h2>Your Totals</h2>
-        <div class="totals-grid">
-          <div class="total-pill save">
-            <div class="label">🐷 Save</div>
-            <div class="amount" id="kidTotalSave">$0</div>
-          </div>
-          <div class="total-pill spend">
-            <div class="label">🛍️ Spend</div>
-            <div class="amount" id="kidTotalSpend">$0</div>
-          </div>
-          <div class="total-pill give">
-            <div class="label">❤️ Give</div>
-            <div class="amount" id="kidTotalGive">$0</div>
-          </div>
-        </div>
+      <div class="card" id="kidPickerCard">
+        <h2>Who's playing?</h2>
+        <div class="kid-pills" id="kidKidPills"></div>
       </div>
 
-      <div id="kidCelebration" class="celebration-card" style="display:none;">
-        <div class="celebration-emojis">
-          <span style="animation-delay:0s">🎉</span>
-          <span style="animation-delay:0.15s">🥳</span>
-          <span style="animation-delay:0.3s">🎊</span>
-          <span style="animation-delay:0.15s">⭐</span>
-          <span style="animation-delay:0s">💰</span>
-        </div>
-        <h2>You did it!</h2>
-        <p id="celebrationText">You split your money like a champ!</p>
-        <div class="celebration-breakdown" id="celebrationBreakdown"></div>
-        <button class="done-btn" id="celebrationDoneBtn">Awesome! 🙌</button>
+      <div id="kidNoKids" class="no-money-note" style="display:none;">
+        🙋 Ask your parent to add you as a kid first!
       </div>
 
-      <div id="kidNoMoney" class="no-money-note" style="display:none;">
-        🙋 Ask your parent to give you some money to split!
-      </div>
+      <div id="kidHasKidArea" style="display:none;">
+        <div class="streak-badge" id="kidStreakBadge">🔥 0-day streak</div>
 
-      <div id="kidSplitArea" style="display:none;">
-        <div class="amount-card">
-          <p>You have</p>
-          <div class="amount">$<span id="totalAmountDisplay">0</span></div>
-        </div>
+        <div id="kidChoreMessages"></div>
 
-        <div class="bucket save">
-          <div class="bucket-header">
-            <span class="bucket-icon">🐷</span>
-            <span class="bucket-name">Save</span>
-          </div>
-          <div class="bucket-controls">
-            <button class="step-btn" data-bucket="save" data-dir="-1">−</button>
-            <div class="bucket-input-wrap">
-              <span>$</span>
-              <input type="number" id="save" min="0" step="1" value="0" inputmode="decimal">
+        <div class="card">
+          <h2>Your Totals</h2>
+          <div class="totals-grid">
+            <div class="total-pill give">
+              <div class="label">❤️ Give</div>
+              <div class="amount" id="kidTotalGive">$0</div>
             </div>
-            <button class="step-btn" data-bucket="save" data-dir="1">+</button>
-          </div>
-        </div>
-
-        <div class="bucket spend">
-          <div class="bucket-header">
-            <span class="bucket-icon">🛍️</span>
-            <span class="bucket-name">Spend</span>
-          </div>
-          <div class="bucket-controls">
-            <button class="step-btn" data-bucket="spend" data-dir="-1">−</button>
-            <div class="bucket-input-wrap">
-              <span>$</span>
-              <input type="number" id="spend" min="0" step="1" value="0" inputmode="decimal">
+            <div class="total-pill save">
+              <div class="label">🐷 Save</div>
+              <div class="amount" id="kidTotalSave">$0</div>
             </div>
-            <button class="step-btn" data-bucket="spend" data-dir="1">+</button>
-          </div>
-        </div>
-
-        <div class="bucket give">
-          <div class="bucket-header">
-            <span class="bucket-icon">❤️</span>
-            <span class="bucket-name">Give</span>
-          </div>
-          <div class="bucket-controls">
-            <button class="step-btn" data-bucket="give" data-dir="-1">−</button>
-            <div class="bucket-input-wrap">
-              <span>$</span>
-              <input type="number" id="give" min="0" step="1" value="0" inputmode="decimal">
+            <div class="total-pill spend">
+              <div class="label">🛍️ Spend</div>
+              <div class="amount" id="kidTotalSpend">$0</div>
             </div>
-            <button class="step-btn" data-bucket="give" data-dir="1">+</button>
           </div>
         </div>
 
-        <div class="total-card">
-          <p>Your total</p>
-          <div class="total-value" id="totalValue">$0</div>
+        <div class="card" id="kidSavingsWinsCard" style="display:none;">
+          <h2>🏆 Savings Wins</h2>
+          <ul class="round-list" id="kidSavingsWinsList"></ul>
         </div>
 
-        <button class="split-btn" id="splitBtn">Split it! 💪</button>
+        <div id="kidCelebration" class="celebration-card" style="display:none;">
+          <div class="celebration-emojis">
+            <span style="animation-delay:0s">🎉</span>
+            <span style="animation-delay:0.15s">🥳</span>
+            <span style="animation-delay:0.3s">🎊</span>
+            <span style="animation-delay:0.15s">⭐</span>
+            <span style="animation-delay:0s">💰</span>
+          </div>
+          <h2>You did it!</h2>
+          <p id="celebrationText">You split your money like a champ!</p>
+          <div class="celebration-breakdown" id="celebrationBreakdown"></div>
+          <button class="done-btn" id="celebrationDoneBtn">Awesome! 🙌</button>
+        </div>
 
-        <div id="message"></div>
+        <div id="goalCelebrationScreen" class="celebration-card goal-celebration-card" style="display:none;">
+          <div class="celebration-emojis">
+            <span style="animation-delay:0s">🏆</span>
+            <span style="animation-delay:0.15s">🌟</span>
+            <span style="animation-delay:0.3s">🎉</span>
+            <span style="animation-delay:0.15s">✨</span>
+            <span style="animation-delay:0s">🐷</span>
+          </div>
+          <h2>Goal Achieved!</h2>
+          <p id="goalCelebrationText">You saved enough for your goal!</p>
+          <button class="done-btn" id="goalCelebrationDoneBtn">Woohoo! 🎉</button>
+        </div>
+
+        <div id="kidNoMoney" style="display:none;">
+          <div class="no-money-note" id="kidNoMoneyNote">🙋 Ask your parent to give you some money to split!</div>
+          <div id="kidChoresArea"></div>
+        </div>
+
+        <div id="kidSplitArea" style="display:none;">
+          <div class="amount-card">
+            <p>You have</p>
+            <div class="amount">$<span id="totalAmountDisplay">0</span></div>
+          </div>
+
+          <div class="bucket give">
+            <div class="bucket-header">
+              <span class="bucket-icon">❤️</span>
+              <span class="bucket-name">Give</span>
+            </div>
+            <div class="bucket-controls">
+              <button class="step-btn" data-bucket="give" data-dir="-1">−</button>
+              <div class="bucket-input-wrap">
+                <span>$</span>
+                <input type="number" id="give" min="0" step="1" value="0" inputmode="decimal">
+              </div>
+              <button class="step-btn" data-bucket="give" data-dir="1">+</button>
+            </div>
+            <div class="note-input-wrap">
+              <label for="giveNote">Who or what are you giving to?</label>
+              <input type="text" id="giveNote" maxlength="60" placeholder="(optional)">
+            </div>
+            <div class="note-input-wrap">
+              <label>Add a picture (optional)</label>
+              <div class="photo-picker">
+                <input type="file" accept="image/*" capture="environment" id="giveImageInput" class="photo-input">
+                <label for="giveImageInput" class="photo-label" id="giveImageLabel">
+                  <span class="photo-placeholder">📷 Add photo</span>
+                </label>
+                <button type="button" class="photo-remove-btn" id="giveImageRemoveBtn" style="display:none;">Remove photo</button>
+              </div>
+            </div>
+            <div class="remaining-note" id="remainingAfterGive">Remaining: $0</div>
+          </div>
+
+          <div class="bucket save">
+            <div class="bucket-header">
+              <span class="bucket-icon">🐷</span>
+              <span class="bucket-name">Save</span>
+            </div>
+            <div class="bucket-controls">
+              <button class="step-btn" data-bucket="save" data-dir="-1">−</button>
+              <div class="bucket-input-wrap">
+                <span>$</span>
+                <input type="number" id="save" min="0" step="1" value="0" inputmode="decimal">
+              </div>
+              <button class="step-btn" data-bucket="save" data-dir="1">+</button>
+            </div>
+            <div class="note-input-wrap">
+              <label for="saveNote">What are you saving for?</label>
+              <input type="text" id="saveNote" maxlength="60" placeholder="(optional)">
+            </div>
+            <div class="note-input-wrap">
+              <label>Add a picture (optional)</label>
+              <div class="photo-picker">
+                <input type="file" accept="image/*" capture="environment" id="saveImageInput" class="photo-input">
+                <label for="saveImageInput" class="photo-label" id="saveImageLabel">
+                  <span class="photo-placeholder">📷 Add photo</span>
+                </label>
+                <button type="button" class="photo-remove-btn" id="saveImageRemoveBtn" style="display:none;">Remove photo</button>
+              </div>
+            </div>
+            <div class="save-goal-mini" id="saveGoalMini"></div>
+            <div class="remaining-note" id="remainingAfterSave">Remaining: $0</div>
+          </div>
+
+          <div class="bucket spend">
+            <div class="bucket-header">
+              <span class="bucket-icon">🛍️</span>
+              <span class="bucket-name">Spend</span>
+            </div>
+            <div class="bucket-controls">
+              <button class="step-btn" data-bucket="spend" data-dir="-1">−</button>
+              <div class="bucket-input-wrap">
+                <span>$</span>
+                <input type="number" id="spend" min="0" step="1" value="0" inputmode="decimal">
+              </div>
+              <button class="step-btn" data-bucket="spend" data-dir="1">+</button>
+            </div>
+            <div class="remaining-note final" id="remainingAfterSpend">Remaining: $0</div>
+          </div>
+
+          <button class="split-btn" id="splitBtn">Split it! 💪</button>
+
+          <div id="message"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <script>
-    const ROUNDS_KEY = 'mm_rounds';
-    const CURRENT_AMOUNT_KEY = 'mm_currentAmount';
-    const ACTIVE_VIEW_KEY = 'mm_activeView';
+  <div class="photo-lightbox" id="photoLightbox">
+    <img id="photoLightboxImg" src="" alt="Full-size photo">
+  </div>
 
-    function loadRounds() {
+  <script>
+    // ---------- Storage keys ----------
+    const KIDS_KEY = 'mm_kids';
+    const ACTIVE_KID_KEY = 'mm_activeKidId';
+    const ROUNDS_KEY = 'mm_rounds';
+    const PENDING_KEY = 'mm_pending';
+    const GOALS_KEY = 'mm_goals';
+    const COMPLETED_GOALS_KEY = 'mm_completedGoals';
+    const CHORES_KEY = 'mm_chores';
+    const CHORE_COMPLETIONS_KEY = 'mm_choreCompletions';
+    const ACTIVE_VIEW_KEY = 'mm_activeView';
+    const LEGACY_AMOUNT_KEY = 'mm_currentAmount';
+
+    // ---------- Generic storage helpers ----------
+    function loadJSON(key, fallback) {
       try {
-        return JSON.parse(localStorage.getItem(ROUNDS_KEY)) || [];
+        const raw = localStorage.getItem(key);
+        return raw === null ? fallback : JSON.parse(raw);
       } catch (e) {
-        return [];
+        return fallback;
       }
     }
 
-    function saveRounds(rounds) {
-      localStorage.setItem(ROUNDS_KEY, JSON.stringify(rounds));
+    function saveJSON(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
     }
 
-    function getCurrentAmount() {
-      const raw = localStorage.getItem(CURRENT_AMOUNT_KEY);
-      if (raw === null) return null;
-      const n = parseFloat(raw);
-      return isNaN(n) ? null : n;
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str == null ? '' : String(str);
+      return div.innerHTML;
     }
 
-    function setCurrentAmount(amount) {
-      localStorage.setItem(CURRENT_AMOUNT_KEY, String(amount));
+    // ---------- Photo lightbox ----------
+    const photoLightbox = document.getElementById('photoLightbox');
+    const photoLightboxImg = document.getElementById('photoLightboxImg');
+
+    function openLightbox(src) {
+      photoLightboxImg.src = src;
+      photoLightbox.classList.add('open');
     }
 
-    function clearCurrentAmount() {
-      localStorage.removeItem(CURRENT_AMOUNT_KEY);
+    function closeLightbox() {
+      photoLightbox.classList.remove('open');
+      photoLightboxImg.src = '';
+    }
+
+    photoLightbox.addEventListener('click', closeLightbox);
+
+    // ---------- Kids ----------
+    function loadKids() { return loadJSON(KIDS_KEY, []); }
+    function saveKids(kids) { saveJSON(KIDS_KEY, kids); }
+
+    function getActiveKidId() { return localStorage.getItem(ACTIVE_KID_KEY); }
+    function setActiveKidId(id) { localStorage.setItem(ACTIVE_KID_KEY, id); }
+
+    function ensureActiveKid() {
+      const kids = loadKids();
+      if (kids.length === 0) {
+        localStorage.removeItem(ACTIVE_KID_KEY);
+        return null;
+      }
+      const activeId = getActiveKidId();
+      if (activeId && kids.some(k => k.id === activeId)) return activeId;
+      setActiveKidId(kids[0].id);
+      return kids[0].id;
+    }
+
+    function addKid(name) {
+      const kids = loadKids();
+      const kid = { id: 'kid_' + Date.now() + '_' + Math.floor(Math.random() * 1000), name };
+      kids.push(kid);
+      saveKids(kids);
+      setActiveKidId(kid.id);
+      return kid;
+    }
+
+    // ---------- Rounds ----------
+    function loadRounds() { return loadJSON(ROUNDS_KEY, []); }
+    function saveRounds(rounds) { saveJSON(ROUNDS_KEY, rounds); }
+
+    function roundsForKid(kidId) {
+      return loadRounds().filter(r => r.kidId === kidId);
     }
 
     function computeTotals(rounds) {
@@ -670,6 +1519,297 @@
         acc.give += r.give;
         return acc;
       }, { save: 0, spend: 0, give: 0 });
+    }
+
+    // ---------- Pending amounts (per kid) ----------
+    function loadPending() { return loadJSON(PENDING_KEY, {}); }
+    function savePending(pending) { saveJSON(PENDING_KEY, pending); }
+
+    function getPendingFor(kidId) {
+      const pending = loadPending();
+      const raw = pending[kidId];
+      return typeof raw === 'number' && !isNaN(raw) ? raw : null;
+    }
+
+    function setPendingFor(kidId, amount) {
+      const pending = loadPending();
+      pending[kidId] = amount;
+      savePending(pending);
+    }
+
+    function clearPendingFor(kidId) {
+      const pending = loadPending();
+      delete pending[kidId];
+      savePending(pending);
+    }
+
+    // ---------- Goals (per kid) ----------
+    function loadGoals() { return loadJSON(GOALS_KEY, {}); }
+    function saveGoals(goals) { saveJSON(GOALS_KEY, goals); }
+
+    function getGoal(kidId) {
+      const goals = loadGoals();
+      return goals[kidId] || null;
+    }
+
+    function setGoal(kidId, name, target) {
+      const goals = loadGoals();
+      goals[kidId] = { name, target };
+      saveGoals(goals);
+    }
+
+    function clearGoal(kidId) {
+      const goals = loadGoals();
+      delete goals[kidId];
+      saveGoals(goals);
+    }
+
+    // ---------- Completed goals (savings wins history) ----------
+    function loadCompletedGoals() { return loadJSON(COMPLETED_GOALS_KEY, []); }
+    function saveCompletedGoals(list) { saveJSON(COMPLETED_GOALS_KEY, list); }
+
+    function addCompletedGoal(kidId, goal) {
+      const list = loadCompletedGoals();
+      list.push({
+        id: 'goalwin_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        kidId,
+        name: goal.name,
+        target: goal.target,
+        completedAt: new Date().toISOString(),
+      });
+      saveCompletedGoals(list);
+    }
+
+    function getCompletedGoalsFor(kidId) {
+      return loadCompletedGoals().filter(g => g.kidId === kidId);
+    }
+
+    // ---------- Chores (per kid) ----------
+    function loadChoresMap() { return loadJSON(CHORES_KEY, {}); }
+    function saveChoresMap(map) { saveJSON(CHORES_KEY, map); }
+
+    function getChoresFor(kidId) {
+      const map = loadChoresMap();
+      return map[kidId] || [];
+    }
+
+    function addChore(kidId, name, price, frequency) {
+      const map = loadChoresMap();
+      if (!map[kidId]) map[kidId] = [];
+      map[kidId].push({
+        id: 'chore_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        name,
+        price,
+        frequency: ['daily', 'weekly', 'monthly'].includes(frequency) ? frequency : 'anytime',
+      });
+      saveChoresMap(map);
+    }
+
+    function deleteChore(kidId, choreId) {
+      const map = loadChoresMap();
+      if (!map[kidId]) return;
+      map[kidId] = map[kidId].filter(c => c.id !== choreId);
+      saveChoresMap(map);
+    }
+
+    // ---------- Chore completions ----------
+    function loadChoreCompletions() { return loadJSON(CHORE_COMPLETIONS_KEY, []); }
+    function saveChoreCompletions(list) { saveJSON(CHORE_COMPLETIONS_KEY, list); }
+
+    function addChoreCompletion(kidId, chore, photo) {
+      const list = loadChoreCompletions();
+      list.push({
+        id: 'cc_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        kidId,
+        choreId: chore.id,
+        choreName: chore.name,
+        price: chore.price,
+        photo: photo || null,
+        completedAt: new Date().toISOString(),
+        status: 'pending',
+      });
+      saveChoreCompletions(list);
+    }
+
+    function markChoreCompletionPaid(id, note) {
+      const list = loadChoreCompletions();
+      const record = list.find(cc => cc.id === id);
+      if (!record) return;
+      record.status = 'paid';
+      record.parentPayNote = note || '';
+      record.kidAcknowledged = false;
+      saveChoreCompletions(list);
+    }
+
+    function acknowledgeChoreMessage(id) {
+      const list = loadChoreCompletions();
+      const record = list.find(cc => cc.id === id);
+      if (!record) return;
+      record.kidAcknowledged = true;
+      saveChoreCompletions(list);
+    }
+
+    function dismissChoreCompletion(id) {
+      const list = loadChoreCompletions();
+      const record = list.find(cc => cc.id === id);
+      if (!record) return;
+      record.status = 'dismissed';
+      saveChoreCompletions(list);
+    }
+
+    function sendChoreCompletionForRedo(id, note) {
+      const list = loadChoreCompletions();
+      const record = list.find(cc => cc.id === id);
+      if (!record) return;
+      record.status = 'needs_redo';
+      record.parentNote = note || '';
+      saveChoreCompletions(list);
+    }
+
+    function getLatestCompletion(kidId, choreId) {
+      const matches = loadChoreCompletions().filter(cc => cc.kidId === kidId && cc.choreId === choreId);
+      if (matches.length === 0) return null;
+      return matches.reduce((latest, cc) => (!latest || cc.completedAt > latest.completedAt) ? cc : latest, null);
+    }
+
+    // ---------- Streaks ----------
+    function localDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function startOfWeek(date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      const day = d.getDay();
+      const diff = (day === 0 ? -6 : 1) - day;
+      d.setDate(d.getDate() + diff);
+      return d;
+    }
+
+    function startOfChorePeriod(frequency, date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      if (frequency === 'daily') return d;
+      if (frequency === 'weekly') return startOfWeek(d);
+      if (frequency === 'monthly') {
+        d.setDate(1);
+        return d;
+      }
+      return null;
+    }
+
+    const CHORE_FREQUENCY_LABELS = {
+      daily: { badge: '🔁 Daily', done: 'today' },
+      weekly: { badge: '🔁 Weekly', done: 'this week' },
+      monthly: { badge: '🔁 Monthly', done: 'this month' },
+    };
+
+    function computeStreak(rounds) {
+      const days = new Set(rounds.map(r => localDateKey(new Date(r.completedAt))));
+      if (days.size === 0) return 0;
+
+      const cursor = new Date();
+      cursor.setHours(0, 0, 0, 0);
+
+      if (!days.has(localDateKey(cursor))) {
+        cursor.setDate(cursor.getDate() - 1);
+        if (!days.has(localDateKey(cursor))) return 0;
+      }
+
+      let streak = 0;
+      while (days.has(localDateKey(cursor))) {
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return streak;
+    }
+
+    // ---------- Migration from single-kid legacy data ----------
+    function migrateLegacyData() {
+      const kids = loadKids();
+      if (kids.length > 0) return;
+
+      const rounds = loadRounds();
+      const legacyAmountRaw = localStorage.getItem(LEGACY_AMOUNT_KEY);
+      const hasLegacyRounds = rounds.length > 0 && rounds.some(r => !r.kidId);
+      const hasLegacyPending = legacyAmountRaw !== null;
+
+      if (!hasLegacyRounds && !hasLegacyPending) return;
+
+      const defaultKid = { id: 'kid_' + Date.now(), name: 'Kid 1' };
+      saveKids([defaultKid]);
+
+      if (hasLegacyRounds) {
+        const migratedRounds = rounds.map(r => r.kidId ? r : Object.assign({}, r, { kidId: defaultKid.id }));
+        saveRounds(migratedRounds);
+      }
+
+      if (hasLegacyPending) {
+        const amount = parseFloat(legacyAmountRaw);
+        if (!isNaN(amount)) {
+          setPendingFor(defaultKid.id, amount);
+        }
+        localStorage.removeItem(LEGACY_AMOUNT_KEY);
+      }
+
+      setActiveKidId(defaultKid.id);
+    }
+
+    // ---------- Shared kid-pill rendering ----------
+    function renderKidPills(container, activeId, onSelect, onDelete) {
+      const kids = loadKids();
+      container.innerHTML = kids.map(k => `
+        <span class="kid-pill-wrap">
+          <button class="kid-pill${k.id === activeId ? ' active' : ''}" data-kid-id="${k.id}">${escapeHtml(k.name)}</button>
+          ${onDelete ? `<button class="kid-delete-btn" data-kid-id="${k.id}" title="Remove ${escapeHtml(k.name)}">×</button>` : ''}
+        </span>
+      `).join('');
+      container.querySelectorAll('.kid-pill').forEach(btn => {
+        btn.addEventListener('click', () => onSelect(btn.dataset.kidId));
+      });
+      if (onDelete) {
+        container.querySelectorAll('.kid-delete-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onDelete(btn.dataset.kidId);
+          });
+        });
+      }
+    }
+
+    function deleteKid(kidId) {
+      const kids = loadKids();
+      const kid = kids.find(k => k.id === kidId);
+      if (!kid) return;
+
+      const confirmed = window.confirm(`Delete ${kid.name} and all their saved history? This can't be undone.`);
+      if (!confirmed) return;
+
+      saveKids(kids.filter(k => k.id !== kidId));
+      saveRounds(loadRounds().filter(r => r.kidId !== kidId));
+
+      const pending = loadPending();
+      delete pending[kidId];
+      savePending(pending);
+
+      const goals = loadGoals();
+      delete goals[kidId];
+      saveGoals(goals);
+      saveCompletedGoals(loadCompletedGoals().filter(g => g.kidId !== kidId));
+
+      const choresMap = loadChoresMap();
+      delete choresMap[kidId];
+      saveChoresMap(choresMap);
+      saveChoreCompletions(loadChoreCompletions().filter(cc => cc.kidId !== kidId));
+
+      if (getActiveKidId() === kidId) {
+        localStorage.removeItem(ACTIVE_KID_KEY);
+      }
+
+      renderParentView();
     }
 
     // ---------- View switching ----------
@@ -695,19 +1835,346 @@
       btn.addEventListener('click', () => switchView(btn.dataset.view));
     });
 
+    // ---------- Goal display (shared markup builder) ----------
+    function renderGoalBlock(container, kidId, editable) {
+      const goal = getGoal(kidId);
+      const saveTotal = computeTotals(roundsForKid(kidId)).save;
+
+      if (!goal) {
+        container.innerHTML = `
+          <p class="goal-none-note">No savings goal set yet.</p>
+          ${editable ? `
+            <div class="goal-form" id="goalForm">
+              <div class="goal-form-row">
+                <input type="text" id="goalNameInput" placeholder="What are they saving for?" maxlength="40">
+              </div>
+              <div class="goal-form-row">
+                <input type="number" id="goalTargetInput" placeholder="Target $" min="1" step="1">
+                <button class="goal-save-btn" id="goalSaveBtn">Set Goal</button>
+              </div>
+            </div>
+          ` : ''}
+        `;
+        if (editable) {
+          document.getElementById('goalSaveBtn').addEventListener('click', () => {
+            const name = document.getElementById('goalNameInput').value.trim();
+            const target = parseFloat(document.getElementById('goalTargetInput').value);
+            if (!name || isNaN(target) || target <= 0) return;
+            setGoal(kidId, name, target);
+            renderParentView();
+          });
+        }
+        return;
+      }
+
+      const pct = Math.min(100, (saveTotal / goal.target) * 100);
+      const complete = saveTotal >= goal.target;
+
+      container.innerHTML = `
+        <div class="goal-name">🎯 ${escapeHtml(goal.name)}</div>
+        <div class="goal-progress-track">
+          <div class="goal-progress-fill${complete ? ' complete' : ''}" style="width:${pct}%"></div>
+        </div>
+        <div class="goal-meta">
+          <span>$${saveTotal} saved</span>
+          <span>Goal: $${goal.target}</span>
+        </div>
+        ${editable ? '<button class="goal-edit-link" id="goalEditLink">Edit goal</button><div class="goal-form" id="goalForm" style="display:none;margin-top:10px;"></div>' : ''}
+      `;
+
+      if (editable) {
+        document.getElementById('goalEditLink').addEventListener('click', () => {
+          const formEl = document.getElementById('goalForm');
+          formEl.style.display = 'block';
+          formEl.innerHTML = `
+            <div class="goal-form-row">
+              <input type="text" id="goalNameInput" value="${escapeHtml(goal.name)}" maxlength="40">
+            </div>
+            <div class="goal-form-row">
+              <input type="number" id="goalTargetInput" value="${goal.target}" min="1" step="1">
+              <button class="goal-save-btn" id="goalSaveBtn">Update Goal</button>
+            </div>
+          `;
+          document.getElementById('goalSaveBtn').addEventListener('click', () => {
+            const name = document.getElementById('goalNameInput').value.trim();
+            const target = parseFloat(document.getElementById('goalTargetInput').value);
+            if (!name || isNaN(target) || target <= 0) return;
+            setGoal(kidId, name, target);
+            renderParentView();
+          });
+        });
+      }
+    }
+
     // ---------- Parent view ----------
 
+    const parentKidPillsEl = document.getElementById('parentKidPills');
+    const newKidNameInput = document.getElementById('newKidName');
+    const addKidBtn = document.getElementById('addKidBtn');
+    const choresCard = document.getElementById('choresCard');
+    const choreManageList = document.getElementById('choreManageList');
+    const newChoreNameInput = document.getElementById('newChoreName');
+    const newChorePriceInput = document.getElementById('newChorePrice');
+    const newChoreFrequencyInput = document.getElementById('newChoreFrequency');
+    const addChoreBtn = document.getElementById('addChoreBtn');
+    const choreNotificationsCard = document.getElementById('choreNotificationsCard');
+    const choreNotificationList = document.getElementById('choreNotificationList');
+    const giveCard = document.getElementById('giveCard');
+    const givingToLabel = document.getElementById('givingToLabel');
+    const givingToName = document.getElementById('givingToName');
     const giveAmountInput = document.getElementById('giveAmount');
     const giveBtn = document.getElementById('giveBtn');
-    const pendingNote = document.getElementById('pendingNote');
+    const pendingList = document.getElementById('pendingList');
+    const streakGoalCard = document.getElementById('streakGoalCard');
+    const savingsWinsCard = document.getElementById('savingsWinsCard');
+    const parentSavingsWinsList = document.getElementById('parentSavingsWinsList');
+    const parentStreakBadge = document.getElementById('parentStreakBadge');
+    const parentGoalDisplay = document.getElementById('parentGoalDisplay');
     const totalSaveEl = document.getElementById('totalSave');
     const totalSpendEl = document.getElementById('totalSpend');
     const totalGiveEl = document.getElementById('totalGive');
     const roundListEl = document.getElementById('roundList');
 
-    function renderParentView() {
-      const rounds = loadRounds();
+    function addKidFromInput() {
+      const name = newKidNameInput.value.trim();
+      if (!name) return;
+      addKid(name);
+      newKidNameInput.value = '';
+      renderParentView();
+    }
 
+    addKidBtn.addEventListener('click', addKidFromInput);
+    newKidNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addKidFromInput();
+    });
+
+    function addChoreFromInputs() {
+      const activeId = ensureActiveKid();
+      if (!activeId) return;
+      const name = newChoreNameInput.value.trim();
+      const price = parseFloat(newChorePriceInput.value);
+      if (!name || isNaN(price) || price <= 0) return;
+      addChore(activeId, name, price, newChoreFrequencyInput.value);
+      newChoreNameInput.value = '';
+      newChorePriceInput.value = '';
+      newChoreFrequencyInput.value = 'anytime';
+      renderParentView();
+    }
+
+    addChoreBtn.addEventListener('click', addChoreFromInputs);
+    [newChoreNameInput, newChorePriceInput].forEach(input => {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addChoreFromInputs();
+      });
+    });
+
+    function renderChoreManageList(kidId) {
+      const chores = getChoresFor(kidId);
+      if (chores.length === 0) {
+        choreManageList.innerHTML = '<li class="empty-note">No chores added yet.</li>';
+        return;
+      }
+      choreManageList.innerHTML = chores.map(c => `
+        <li>
+          <div class="chore-manage-row">
+            <span>${escapeHtml(c.name)} — $${c.price}${CHORE_FREQUENCY_LABELS[c.frequency] ? ` <span class="chore-freq-badge">${CHORE_FREQUENCY_LABELS[c.frequency].badge}</span>` : ''}</span>
+            <button class="kid-delete-btn" data-chore-id="${c.id}" title="Remove ${escapeHtml(c.name)}">×</button>
+          </div>
+        </li>
+      `).join('');
+      choreManageList.querySelectorAll('.kid-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          deleteChore(kidId, btn.dataset.choreId);
+          renderParentView();
+        });
+      });
+    }
+
+    let redoComposerId = null;
+    let payComposerId = null;
+
+    function renderChoreNotifications() {
+      const kids = loadKids();
+      const completions = loadChoreCompletions().filter(cc => cc.status === 'pending');
+
+      if (completions.length === 0) {
+        choreNotificationsCard.style.display = 'none';
+        redoComposerId = null;
+        payComposerId = null;
+        return;
+      }
+      choreNotificationsCard.style.display = 'block';
+
+      choreNotificationList.innerHTML = completions.slice().reverse().map(cc => {
+        const kid = kids.find(k => k.id === cc.kidId);
+        const kidName = kid ? kid.name : 'A kid';
+        const photoHtml = cc.photo ? `<img class="chore-photo-preview" src="${cc.photo}" alt="Photo of finished chore" data-full-photo="${cc.photo}">` : '';
+        const infoHtml = `
+          <div class="chore-notification-info">
+            🎉 <strong>${escapeHtml(kidName)}</strong> finished <strong>${escapeHtml(cc.choreName)}</strong> — $${cc.price}
+            ${photoHtml}
+          </div>
+        `;
+
+        if (payComposerId === cc.id) {
+          return `
+            <li class="chore-notification-row">
+              ${infoHtml}
+              <div class="note-input-wrap">
+                <label>Add a message with your payment (optional)</label>
+                <input type="text" id="payNoteInput" maxlength="100" placeholder="e.g. Great job, thank you!">
+              </div>
+              <div class="chore-composer-actions">
+                <button class="chore-submit-btn" data-completion-id="${cc.id}">Confirm &amp; Pay $${cc.price} 💸</button>
+                <button class="chore-cancel-btn" data-completion-id="${cc.id}">Cancel</button>
+              </div>
+            </li>
+          `;
+        }
+
+        if (redoComposerId === cc.id) {
+          return `
+            <li class="chore-notification-row">
+              ${infoHtml}
+              <div class="note-input-wrap">
+                <label>What needs fixing? (optional note back to them)</label>
+                <input type="text" id="redoNoteInput" maxlength="100" placeholder="e.g. Don't forget to vacuum too">
+              </div>
+              <div class="chore-composer-actions">
+                <button class="chore-redo-send-btn" data-completion-id="${cc.id}">Send Back ↩️</button>
+                <button class="chore-cancel-btn" data-completion-id="${cc.id}">Cancel</button>
+              </div>
+            </li>
+          `;
+        }
+
+        return `
+          <li class="chore-notification-row">
+            ${infoHtml}
+            <div class="chore-notification-actions">
+              <button class="chore-pay-btn" data-completion-id="${cc.id}">Pay $${cc.price} 💸</button>
+            </div>
+            <div class="chore-notification-actions secondary">
+              <button class="chore-redo-btn" data-completion-id="${cc.id}">Needs Redo ↩️</button>
+              <button class="chore-dismiss-btn" data-completion-id="${cc.id}">Dismiss</button>
+            </div>
+          </li>
+        `;
+      }).join('');
+
+      choreNotificationList.querySelectorAll('.chore-photo-preview').forEach(img => {
+        img.addEventListener('click', () => openLightbox(img.dataset.fullPhoto));
+      });
+
+      choreNotificationList.querySelectorAll('.chore-pay-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          payComposerId = btn.dataset.completionId;
+          redoComposerId = null;
+          renderChoreNotifications();
+        });
+      });
+
+      choreNotificationList.querySelectorAll('.chore-submit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.completionId;
+          const record = loadChoreCompletions().find(cc => cc.id === id);
+          if (!record) return;
+          const note = document.getElementById('payNoteInput').value.trim();
+          const pending = loadPending();
+          pending[record.kidId] = (pending[record.kidId] || 0) + record.price;
+          savePending(pending);
+          markChoreCompletionPaid(id, note);
+          payComposerId = null;
+          renderParentView();
+        });
+      });
+
+      choreNotificationList.querySelectorAll('.chore-dismiss-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          dismissChoreCompletion(btn.dataset.completionId);
+          renderParentView();
+        });
+      });
+
+      choreNotificationList.querySelectorAll('.chore-redo-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          redoComposerId = btn.dataset.completionId;
+          payComposerId = null;
+          renderChoreNotifications();
+        });
+      });
+
+      choreNotificationList.querySelectorAll('.chore-cancel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          redoComposerId = null;
+          payComposerId = null;
+          renderChoreNotifications();
+        });
+      });
+
+      choreNotificationList.querySelectorAll('.chore-redo-send-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.completionId;
+          const note = document.getElementById('redoNoteInput').value.trim();
+          sendChoreCompletionForRedo(id, note);
+          redoComposerId = null;
+          renderParentView();
+        });
+      });
+    }
+
+    function renderSavingsWinsList(listEl, kidId) {
+      const wins = getCompletedGoalsFor(kidId).slice().reverse();
+      if (wins.length === 0) {
+        listEl.innerHTML = '<li class="empty-note">No savings goals reached yet — keep going!</li>';
+        return;
+      }
+      listEl.innerHTML = wins.map(g => `
+        <li>
+          <div class="round-row">
+            <span class="round-amount">🏆 ${escapeHtml(g.name)}</span>
+            <span class="round-split">$${g.target} saved</span>
+          </div>
+          <span class="round-note">${new Date(g.completedAt).toLocaleDateString()}</span>
+        </li>
+      `).join('');
+    }
+
+    function renderParentView() {
+      const kids = loadKids();
+      const activeId = ensureActiveKid();
+
+      renderKidPills(parentKidPillsEl, activeId, (kidId) => {
+        setActiveKidId(kidId);
+        renderParentView();
+      }, deleteKid);
+
+      renderChoreNotifications();
+
+      if (!activeId) {
+        choresCard.style.display = 'none';
+        giveCard.style.display = 'none';
+        streakGoalCard.style.display = 'none';
+        savingsWinsCard.style.display = 'none';
+        totalSaveEl.textContent = '$0';
+        totalSpendEl.textContent = '$0';
+        totalGiveEl.textContent = '$0';
+        roundListEl.innerHTML = '<li class="empty-note">Add a kid to get started.</li>';
+        return;
+      }
+
+      choresCard.style.display = 'block';
+      renderChoreManageList(activeId);
+      giveCard.style.display = 'block';
+      streakGoalCard.style.display = 'block';
+      savingsWinsCard.style.display = 'block';
+      renderSavingsWinsList(parentSavingsWinsList, activeId);
+
+      const activeKid = kids.find(k => k.id === activeId);
+      givingToLabel.style.display = 'block';
+      givingToName.textContent = activeKid.name;
+
+      const rounds = roundsForKid(activeId);
       const totals = computeTotals(rounds);
 
       totalSaveEl.textContent = '$' + totals.save;
@@ -720,36 +2187,65 @@
         roundListEl.innerHTML = rounds
           .slice()
           .reverse()
-          .map(r => `
-            <li>
-              <span class="round-amount">$${r.amount}</span>
-              <span class="round-split">🐷$${r.save} 🛍️$${r.spend} ❤️$${r.give}</span>
-            </li>
-          `)
+          .map(r => {
+            const notes = [];
+            if (r.saveNote) notes.push(`🐷 for: ${escapeHtml(r.saveNote)}`);
+            if (r.giveNote) notes.push(`❤️ to: ${escapeHtml(r.giveNote)}`);
+            const notesHtml = notes.length ? `<span class="round-note">${notes.join(' · ')}</span>` : '';
+            const thumbs = [];
+            if (r.giveImage) thumbs.push(`<img class="round-thumb" src="${r.giveImage}" alt="Give photo">`);
+            if (r.saveImage) thumbs.push(`<img class="round-thumb" src="${r.saveImage}" alt="Save photo">`);
+            const thumbsHtml = thumbs.length ? `<div class="round-thumbs">${thumbs.join('')}</div>` : '';
+            return `
+              <li>
+                <div class="round-row">
+                  <span class="round-amount">$${r.amount}</span>
+                  <span class="round-split">❤️$${r.give} 🐷$${r.save} 🛍️$${r.spend}</span>
+                </div>
+                ${notesHtml}
+                ${thumbsHtml}
+              </li>
+            `;
+          })
           .join('');
       }
 
-      const currentAmount = getCurrentAmount();
-      if (currentAmount !== null) {
-        pendingNote.style.display = 'block';
-        pendingNote.textContent = `⏳ Waiting for the kid to split $${currentAmount}...`;
+      const streak = computeStreak(rounds);
+      parentStreakBadge.textContent = `🔥 ${streak}-day streak`;
+
+      renderGoalBlock(parentGoalDisplay, activeId, true);
+
+      // Pending list across all kids
+      const pending = loadPending();
+      const pendingKids = kids.filter(k => typeof pending[k.id] === 'number' && !isNaN(pending[k.id]));
+      if (pendingKids.length === 0) {
+        pendingList.innerHTML = '';
       } else {
-        pendingNote.style.display = 'none';
+        pendingList.innerHTML = pendingKids
+          .map(k => `<li>⏳ ${escapeHtml(k.name)}: $${pending[k.id]} waiting to split</li>`)
+          .join('');
       }
     }
 
     giveBtn.addEventListener('click', () => {
+      const activeId = ensureActiveKid();
+      if (!activeId) return;
       const amount = parseFloat(giveAmountInput.value);
       if (isNaN(amount) || amount <= 0) {
         return;
       }
-      setCurrentAmount(amount);
+      setPendingFor(activeId, amount);
       giveAmountInput.value = '';
       renderParentView();
     });
 
     // ---------- Kid view ----------
 
+    const kidKidPillsEl = document.getElementById('kidKidPills');
+    const kidNoKids = document.getElementById('kidNoKids');
+    const kidHasKidArea = document.getElementById('kidHasKidArea');
+    const kidPickerCard = document.getElementById('kidPickerCard');
+    const kidStreakBadge = document.getElementById('kidStreakBadge');
     const kidNoMoney = document.getElementById('kidNoMoney');
     const kidSplitArea = document.getElementById('kidSplitArea');
     const kidCelebration = document.getElementById('kidCelebration');
@@ -757,72 +2253,405 @@
     const celebrationBreakdown = document.getElementById('celebrationBreakdown');
     const celebrationDoneBtn = document.getElementById('celebrationDoneBtn');
     const totalAmountDisplay = document.getElementById('totalAmountDisplay');
-    const totalValueEl = document.getElementById('totalValue');
+    const remainingAfterSpendEl = document.getElementById('remainingAfterSpend');
+    const remainingAfterSaveEl = document.getElementById('remainingAfterSave');
+    const remainingAfterGiveEl = document.getElementById('remainingAfterGive');
     const messageEl = document.getElementById('message');
     const splitBtn = document.getElementById('splitBtn');
     const kidTotalSaveEl = document.getElementById('kidTotalSave');
     const kidTotalSpendEl = document.getElementById('kidTotalSpend');
     const kidTotalGiveEl = document.getElementById('kidTotalGive');
+    const kidSavingsWinsCard = document.getElementById('kidSavingsWinsCard');
+    const kidSavingsWinsList = document.getElementById('kidSavingsWinsList');
+    const goalCelebrationScreen = document.getElementById('goalCelebrationScreen');
+    const goalCelebrationText = document.getElementById('goalCelebrationText');
+    const goalCelebrationDoneBtn = document.getElementById('goalCelebrationDoneBtn');
+    const saveGoalMini = document.getElementById('saveGoalMini');
 
     const inputs = {
       save: document.getElementById('save'),
       spend: document.getElementById('spend'),
       give: document.getElementById('give'),
     };
+    const noteInputs = {
+      save: document.getElementById('saveNote'),
+      give: document.getElementById('giveNote'),
+    };
 
     let celebrating = false;
+    let goalCelebrating = null;
+    let activeSplitAmount = 0;
+    let pendingImages = { save: null, give: null };
+
+    // ---------- Photo pickers (Save & Give) ----------
+    function compressImage(file, maxDim, quality, callback) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > height && width > maxDim) {
+            height = Math.round(height * (maxDim / width));
+            width = maxDim;
+          } else if (height >= width && height > maxDim) {
+            width = Math.round(width * (maxDim / height));
+            height = maxDim;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          callback(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function setupPhotoPicker(bucket) {
+      const input = document.getElementById(bucket + 'ImageInput');
+      const label = document.getElementById(bucket + 'ImageLabel');
+      const removeBtn = document.getElementById(bucket + 'ImageRemoveBtn');
+
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        compressImage(file, 240, 0.7, (dataUrl) => {
+          pendingImages[bucket] = dataUrl;
+          label.style.backgroundImage = `url(${dataUrl})`;
+          label.classList.add('has-photo');
+          removeBtn.style.display = 'inline-block';
+        });
+      });
+
+      removeBtn.addEventListener('click', () => {
+        pendingImages[bucket] = null;
+        input.value = '';
+        label.style.backgroundImage = '';
+        label.classList.remove('has-photo');
+        removeBtn.style.display = 'none';
+      });
+    }
+
+    function resetPhotoPicker(bucket) {
+      pendingImages[bucket] = null;
+      document.getElementById(bucket + 'ImageInput').value = '';
+      const label = document.getElementById(bucket + 'ImageLabel');
+      label.style.backgroundImage = '';
+      label.classList.remove('has-photo');
+      document.getElementById(bucket + 'ImageRemoveBtn').style.display = 'none';
+    }
+
+    setupPhotoPicker('save');
+    setupPhotoPicker('give');
+
+    // ---------- Chores (Kid view) ----------
+    const kidNoMoneyNote = document.getElementById('kidNoMoneyNote');
+    const kidChoresArea = document.getElementById('kidChoresArea');
+    let choreBeingCompleted = null;
+    let choreCompletionPhoto = null;
+
+    function renderKidChores(kidId) {
+      const chores = getChoresFor(kidId);
+
+      kidNoMoneyNote.textContent = chores.length > 0
+        ? "🙋 No money to split right now — but you can do a chore below to earn some!"
+        : "🙋 Ask your parent to give you some money to split!";
+
+      if (chores.length === 0) {
+        kidChoresArea.innerHTML = '';
+        return;
+      }
+
+      const now = new Date();
+
+      kidChoresArea.innerHTML = `
+        <div class="card">
+          <h2>Chores You Can Do</h2>
+          <ul class="chore-list">
+            ${chores.map(c => {
+              const freqInfo = CHORE_FREQUENCY_LABELS[c.frequency];
+              const freqBadge = freqInfo ? ` <span class="chore-freq-badge">${freqInfo.badge}</span>` : '';
+
+              if (choreBeingCompleted === c.id) {
+                return `
+                  <li class="chore-item">
+                    <div class="chore-row">
+                      <span class="chore-name">🧹 ${escapeHtml(c.name)}${freqBadge}</span>
+                      <span class="chore-price">$${c.price}</span>
+                    </div>
+                    <div class="note-input-wrap">
+                      <label>Add a picture of your finished chore (optional)</label>
+                      <div class="photo-picker">
+                        <input type="file" accept="image/*" capture="environment" id="choreImageInput" class="photo-input">
+                        <label for="choreImageInput" class="photo-label" id="choreImageLabel">
+                          <span class="photo-placeholder">📷 Add photo</span>
+                        </label>
+                        <button type="button" class="photo-remove-btn" id="choreImageRemoveBtn" style="display:none;">Remove photo</button>
+                      </div>
+                    </div>
+                    <div class="chore-composer-actions">
+                      <button class="chore-submit-btn" data-chore-id="${c.id}">Submit ✅</button>
+                      <button class="chore-cancel-btn" data-chore-id="${c.id}">Cancel</button>
+                    </div>
+                  </li>
+                `;
+              }
+
+              const latest = getLatestCompletion(kidId, c.id);
+
+              if (latest && latest.status === 'pending') {
+                return `
+                  <li class="chore-item">
+                    <div class="chore-row">
+                      <span class="chore-name">🧹 ${escapeHtml(c.name)}${freqBadge}</span>
+                      <span class="chore-price">$${c.price}</span>
+                      <span class="chore-pending-badge">⏳ Waiting for parent</span>
+                    </div>
+                  </li>
+                `;
+              }
+
+              if (latest && latest.status === 'needs_redo') {
+                const noteText = latest.parentNote ? `: "${escapeHtml(latest.parentNote)}"` : '';
+                return `
+                  <li class="chore-item">
+                    <div class="chore-row">
+                      <span class="chore-name">🧹 ${escapeHtml(c.name)}${freqBadge}</span>
+                      <span class="chore-price">$${c.price}</span>
+                    </div>
+                    <div class="chore-redo-note">🔁 Your parent asked you to redo this${noteText}</div>
+                    <button class="chore-done-btn" data-chore-id="${c.id}">Try Again</button>
+                  </li>
+                `;
+              }
+
+              if (freqInfo) {
+                const periodStart = startOfChorePeriod(c.frequency, now);
+                if (latest && latest.status === 'paid' && new Date(latest.completedAt) >= periodStart) {
+                  return `
+                    <li class="chore-item">
+                      <div class="chore-row">
+                        <span class="chore-name">🧹 ${escapeHtml(c.name)}${freqBadge}</span>
+                        <span class="chore-price">$${c.price}</span>
+                        <span class="chore-done-this-week-badge">✅ Done ${freqInfo.done}</span>
+                      </div>
+                    </li>
+                  `;
+                }
+              }
+
+              return `
+                <li class="chore-item">
+                  <div class="chore-row">
+                    <span class="chore-name">🧹 ${escapeHtml(c.name)}${freqBadge}</span>
+                    <span class="chore-price">$${c.price}</span>
+                    <button class="chore-done-btn" data-chore-id="${c.id}">Mark Done</button>
+                  </div>
+                </li>
+              `;
+            }).join('')}
+          </ul>
+        </div>
+      `;
+
+      kidChoresArea.querySelectorAll('.chore-done-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          choreBeingCompleted = btn.dataset.choreId;
+          choreCompletionPhoto = null;
+          renderKidChores(kidId);
+        });
+      });
+
+      kidChoresArea.querySelectorAll('.chore-cancel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          choreBeingCompleted = null;
+          choreCompletionPhoto = null;
+          renderKidChores(kidId);
+        });
+      });
+
+      kidChoresArea.querySelectorAll('.chore-submit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const choreId = btn.dataset.choreId;
+          const chore = chores.find(c => c.id === choreId);
+          if (!chore) return;
+          addChoreCompletion(kidId, chore, choreCompletionPhoto);
+          choreBeingCompleted = null;
+          choreCompletionPhoto = null;
+          renderKidChores(kidId);
+        });
+      });
+
+      if (choreBeingCompleted) {
+        const input = document.getElementById('choreImageInput');
+        const label = document.getElementById('choreImageLabel');
+        const removeBtn = document.getElementById('choreImageRemoveBtn');
+        input.addEventListener('change', () => {
+          const file = input.files && input.files[0];
+          if (!file) return;
+          compressImage(file, 240, 0.7, (dataUrl) => {
+            choreCompletionPhoto = dataUrl;
+            label.style.backgroundImage = `url(${dataUrl})`;
+            label.classList.add('has-photo');
+            removeBtn.style.display = 'inline-block';
+          });
+        });
+        removeBtn.addEventListener('click', () => {
+          choreCompletionPhoto = null;
+          input.value = '';
+          label.style.backgroundImage = '';
+          label.classList.remove('has-photo');
+          removeBtn.style.display = 'none';
+        });
+      }
+    }
 
     function getVal(input) {
       const n = parseFloat(input.value);
       return isNaN(n) ? 0 : n;
     }
 
-    function renderKidTotals() {
-      const totals = computeTotals(loadRounds());
-      kidTotalSaveEl.textContent = '$' + totals.save;
-      kidTotalSpendEl.textContent = '$' + totals.spend;
-      kidTotalGiveEl.textContent = '$' + totals.give;
+    function renderKidChoreMessages(kidId) {
+      const container = document.getElementById('kidChoreMessages');
+      const messages = loadChoreCompletions().filter(cc =>
+        cc.kidId === kidId && cc.status === 'paid' && cc.parentPayNote && !cc.kidAcknowledged
+      );
+
+      if (messages.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = messages.map(cc => `
+        <div class="chore-message-card">
+          <div class="chore-message-text">💬 Your parent paid you $${cc.price} for <strong>${escapeHtml(cc.choreName)}</strong>: "${escapeHtml(cc.parentPayNote)}"</div>
+          <button class="chore-message-ack-btn" data-completion-id="${cc.id}">Got it! 👍</button>
+        </div>
+      `).join('');
+
+      container.querySelectorAll('.chore-message-ack-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          acknowledgeChoreMessage(btn.dataset.completionId);
+          renderKidChoreMessages(kidId);
+        });
+      });
     }
 
     function renderKidView() {
-      renderKidTotals();
+      const kids = loadKids();
+      const activeId = ensureActiveKid();
+
+      renderKidPills(kidKidPillsEl, activeId, (kidId) => {
+        setActiveKidId(kidId);
+        celebrating = false;
+        goalCelebrating = null;
+        renderKidView();
+      });
+
+      if (kids.length === 0) {
+        kidPickerCard.style.display = 'none';
+        kidNoKids.style.display = 'block';
+        kidHasKidArea.style.display = 'none';
+        return;
+      }
+
+      kidPickerCard.style.display = kids.length > 1 ? 'block' : 'none';
+      kidNoKids.style.display = 'none';
+      kidHasKidArea.style.display = 'block';
+
+      const rounds = roundsForKid(activeId);
+      const totals = computeTotals(rounds);
+      kidTotalSaveEl.textContent = '$' + totals.save;
+      kidTotalSpendEl.textContent = '$' + totals.spend;
+      kidTotalGiveEl.textContent = '$' + totals.give;
+
+      kidStreakBadge.textContent = `🔥 ${computeStreak(rounds)}-day streak`;
+
+      renderKidChoreMessages(activeId);
+
+      const wins = getCompletedGoalsFor(activeId);
+      kidSavingsWinsCard.style.display = wins.length > 0 ? 'block' : 'none';
+      if (wins.length > 0) renderSavingsWinsList(kidSavingsWinsList, activeId);
 
       if (celebrating) {
         kidNoMoney.style.display = 'none';
         kidSplitArea.style.display = 'none';
+        goalCelebrationScreen.style.display = 'none';
         kidCelebration.style.display = 'block';
         return;
       }
 
       kidCelebration.style.display = 'none';
 
-      const currentAmount = getCurrentAmount();
+      if (goalCelebrating) {
+        kidNoMoney.style.display = 'none';
+        kidSplitArea.style.display = 'none';
+        goalCelebrationScreen.style.display = 'block';
+        goalCelebrationText.textContent = `You saved $${goalCelebrating.target} for "${goalCelebrating.name}"! 🎉`;
+        return;
+      }
+
+      goalCelebrationScreen.style.display = 'none';
+
+      const currentAmount = getPendingFor(activeId);
 
       if (currentAmount === null) {
         kidNoMoney.style.display = 'block';
         kidSplitArea.style.display = 'none';
+        renderKidChores(activeId);
         return;
       }
 
+      choreBeingCompleted = null;
+      choreCompletionPhoto = null;
       kidNoMoney.style.display = 'none';
       kidSplitArea.style.display = 'block';
       totalAmountDisplay.textContent = currentAmount;
+      activeSplitAmount = currentAmount;
 
       inputs.save.value = 0;
       inputs.spend.value = 0;
       inputs.give.value = 0;
+      noteInputs.save.value = '';
+      noteInputs.give.value = '';
+      resetPhotoPicker('save');
+      resetPhotoPicker('give');
       messageEl.innerHTML = '';
 
+      renderSaveGoalMini(activeId);
       updateKidTotalDisplay();
     }
 
-    function showCelebration(round) {
+    function renderSaveGoalMini(kidId) {
+      const goal = getGoal(kidId);
+      if (!goal) {
+        saveGoalMini.innerHTML = '';
+        return;
+      }
+      const saveTotal = computeTotals(roundsForKid(kidId)).save;
+      const pct = Math.min(100, (saveTotal / goal.target) * 100);
+      const complete = saveTotal >= goal.target;
+      saveGoalMini.innerHTML = `
+        <div class="goal-progress-track">
+          <div class="goal-progress-fill${complete ? ' complete' : ''}" style="width:${pct}%"></div>
+        </div>
+        <div class="goal-meta">
+          <span>🎯 ${escapeHtml(goal.name)}</span>
+          <span>$${saveTotal} / $${goal.target}</span>
+        </div>
+      `;
+    }
+
+    function showCelebration(round, completedGoal) {
       celebrationText.textContent = `You split $${round.amount} like a champ!`;
       celebrationBreakdown.innerHTML = `
+        <span>❤️ Give $${round.give}</span>
         <span>🐷 Save $${round.save}</span>
         <span>🛍️ Spend $${round.spend}</span>
-        <span>❤️ Give $${round.give}</span>
       `;
+      goalCelebrating = completedGoal || null;
       celebrating = true;
       renderKidView();
     }
@@ -832,44 +2661,75 @@
       renderKidView();
     });
 
+    goalCelebrationDoneBtn.addEventListener('click', () => {
+      goalCelebrating = null;
+      renderKidView();
+    });
+
     function updateKidTotalDisplay() {
+      const give = getVal(inputs.give);
       const save = getVal(inputs.save);
       const spend = getVal(inputs.spend);
-      const give = getVal(inputs.give);
-      const total = save + spend + give;
 
-      totalValueEl.textContent = '$' + total;
-      totalValueEl.className = 'total-value';
+      const afterGive = activeSplitAmount - give;
+      const afterSave = afterGive - save;
+      const afterSpend = afterSave - spend;
+
+      remainingAfterGiveEl.textContent = `Remaining: $${afterGive}`;
+      remainingAfterSaveEl.textContent = `Remaining: $${afterSave}`;
+      remainingAfterSpendEl.textContent = `Remaining: $${afterSpend}`;
+
+      const balanced = Math.abs(afterSpend) < 0.001;
+      remainingAfterSpendEl.classList.toggle('match', balanced);
+      remainingAfterSpendEl.classList.toggle('mismatch', !balanced);
     }
 
     splitBtn.addEventListener('click', () => {
-      const currentAmount = getCurrentAmount();
+      const activeId = ensureActiveKid();
+      if (!activeId) return;
+      const currentAmount = getPendingFor(activeId);
       if (currentAmount === null) return;
 
-      const save = getVal(inputs.save);
       const spend = getVal(inputs.spend);
+      const save = getVal(inputs.save);
       const give = getVal(inputs.give);
       const total = save + spend + give;
 
       if (Math.abs(total - currentAmount) < 0.001) {
-        totalValueEl.className = 'total-value match';
         messageEl.innerHTML = '';
+
+        const goal = getGoal(activeId);
+        const priorSaveTotal = computeTotals(roundsForKid(activeId)).save;
 
         const rounds = loadRounds();
         rounds.push({
           id: Date.now(),
+          kidId: activeId,
           amount: currentAmount,
           save,
           spend,
           give,
+          saveNote: noteInputs.save.value.trim(),
+          giveNote: noteInputs.give.value.trim(),
+          saveImage: pendingImages.save,
+          giveImage: pendingImages.give,
           completedAt: new Date().toISOString(),
         });
         saveRounds(rounds);
-        clearCurrentAmount();
+        clearPendingFor(activeId);
 
-        showCelebration({ amount: currentAmount, save, spend, give });
+        let completedGoal = null;
+        if (goal) {
+          const newSaveTotal = priorSaveTotal + save;
+          if (priorSaveTotal < goal.target && newSaveTotal >= goal.target) {
+            completedGoal = { name: goal.name, target: goal.target };
+            addCompletedGoal(activeId, completedGoal);
+            clearGoal(activeId);
+          }
+        }
+
+        showCelebration({ amount: currentAmount, save, spend, give }, completedGoal);
       } else {
-        totalValueEl.className = 'total-value mismatch';
         const diff = currentAmount - total;
         const diffText = diff > 0
           ? `You still have $${diff} left to put somewhere.`
@@ -898,6 +2758,8 @@
     });
 
     // ---------- Init ----------
+
+    migrateLegacyData();
 
     const initialView = localStorage.getItem(ACTIVE_VIEW_KEY) === 'kid' ? 'kid' : 'parent';
     switchView(initialView);
