@@ -1,0 +1,739 @@
+<title>Money Muscle Brief</title>
+<style>
+  :root {
+    --paper: #f5f6f2;
+    --paper-raised: #ffffff;
+    --ink: #1b2420;
+    --ink-soft: #4a554d;
+    --ink-faint: #7c8880;
+    --line: #dce2da;
+    --green: #1f6b45;
+    --green-soft: #e4efe6;
+    --blue: #2c4870;
+    --blue-soft: #e7edf4;
+    --amber: #91600c;
+    --amber-soft: #fbf0dd;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181a;
+      --paper-raised: #1b211f;
+      --ink: #e9ede8;
+      --ink-soft: #b7c1b7;
+      --ink-faint: #7e8a80;
+      --line: #2b332e;
+      --green: #55b481;
+      --green-soft: #1d2d24;
+      --blue: #8babdc;
+      --blue-soft: #1b2636;
+      --amber: #e0a64b;
+      --amber-soft: #2e2415;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #14181a;
+    --paper-raised: #1b211f;
+    --ink: #e9ede8;
+    --ink-soft: #b7c1b7;
+    --ink-faint: #7e8a80;
+    --line: #2b332e;
+    --green: #55b481;
+    --green-soft: #1d2d24;
+    --blue: #8babdc;
+    --blue-soft: #1b2636;
+    --amber: #e0a64b;
+    --amber-soft: #2e2415;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Public Sans', -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 0 16px;
+    padding-block: 0;
+  }
+
+  .doc {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .masthead {
+    background: var(--green-soft);
+    margin: 0 -16px 40px;
+    padding: 48px 16px 40px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .masthead-inner {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+
+  h1.title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 3rem;
+    line-height: 1.05;
+    margin: 10px 0 14px;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  .dek {
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    max-width: 34em;
+    margin: 0 0 22px;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+  }
+
+  .meta-row span strong {
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  section {
+    margin-bottom: 52px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--green);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.55rem;
+    margin: 0;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  p {
+    margin: 0 0 16px;
+    max-width: 64ch;
+    color: var(--ink);
+  }
+
+  p.lede {
+    color: var(--ink-soft);
+    font-size: 0.98rem;
+  }
+
+  strong { color: var(--ink); font-weight: 600; }
+
+  .quote-row {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 24px 0;
+  }
+
+  blockquote {
+    margin: 0;
+    padding: 4px 0 4px 20px;
+    border-left: 3px solid var(--green);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+  }
+
+  blockquote cite {
+    display: block;
+    margin-top: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    color: var(--ink-faint);
+  }
+
+  .cut-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .cut-list li {
+    padding-left: 18px;
+    border-left: 3px solid var(--line);
+    max-width: 64ch;
+    color: var(--ink);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 620px;
+    font-size: 0.92rem;
+  }
+
+  th {
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: var(--paper-raised);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+  }
+
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+    color: var(--ink);
+    background: var(--paper-raised);
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  td.signal { color: var(--ink-soft); font-style: italic; }
+  td.why { color: var(--ink-soft); }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin-top: 22px;
+  }
+
+  .kpi-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 18px 16px;
+  }
+
+  .kpi-card.north-star {
+    grid-column: 1 / -1;
+    background: var(--green-soft);
+    border-color: var(--green);
+  }
+
+  .kpi-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+
+  .kpi-card.north-star .kpi-label { color: var(--green); }
+
+  .kpi-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    font-size: 1.6rem;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .kpi-card.north-star .kpi-value { font-size: 2rem; }
+
+  .kpi-desc {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .tag-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--blue-soft);
+    color: var(--blue);
+  }
+
+  .tag.flag { background: var(--amber-soft); color: var(--amber); }
+  .tag.shipped { background: var(--green-soft); color: var(--green); }
+
+  .ost-source {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    margin: -6px 0 24px;
+  }
+
+  .ost-block {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+
+  .ost-kind {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .ost-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin: 0 0 16px;
+    color: var(--ink);
+  }
+
+  .outcome-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .outcome-chip {
+    background: var(--blue-soft);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.86rem;
+    max-width: 280px;
+    color: var(--ink);
+  }
+
+  .outcome-chip.business { background: var(--green-soft); }
+
+  .chip-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blue);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .outcome-chip.business .chip-label { color: var(--green); }
+
+  .ost-subhead {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    margin: 18px 0 10px;
+  }
+
+  .need-ladder {
+    list-style: none;
+    margin: 0 0 4px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  .opp-quotes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .opp-quotes li {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    padding-left: 14px;
+    border-left: 2px solid var(--line);
+  }
+
+  .solution-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .solution-tag {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 0.85rem;
+    max-width: 230px;
+  }
+
+  .solution-tag .tag { align-self: flex-start; }
+
+  .phase-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .phase-item {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 16px;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .phase-item:first-child { border-top: none; }
+
+  .phase-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .phase-body strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 1rem;
+  }
+
+  .phase-body p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  hr.rule {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 0 0 40px;
+  }
+
+  footer {
+    padding: 24px 0 56px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+  }
+
+  @media (max-width: 480px) {
+    h1.title { font-size: 2.2rem; }
+    .masthead { padding: 36px 16px 32px; }
+  }
+</style>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">Product Strategy Brief</div>
+    <h1 class="title">Money Muscle</h1>
+    <p class="dek">A savings-and-chores habit builder for EveryDollar families, prepared as a walkthrough artifact for a Product Manager or Senior Product Manager interview.</p>
+    <div class="meta-row">
+      <span><strong>Author</strong> Phil Albritton</span>
+      <span><strong>Status</strong> Working prototype</span>
+      <span><strong>Date</strong> September 28, 2026</span>
+    </div>
+  </div>
+</div>
+
+<div class="doc">
+
+<section>
+  <div class="section-head"><span class="section-num">01</span><h2>The problem</h2></div>
+  <p>Two rounds of qualitative discovery point at the same gap. Roughly twenty interviews conducted for the Kids &amp; Money research, plus a separate synthesis of interviews and lobby feedback on the Financial Peace Kids product, both surface the same three complaints: the tools available are too dense to start, they do not flex across age or family size, and parents are left guessing how to reinforce the habit day to day.</p>
+  <p>Meanwhile, commission for chores is already a normal line item in many EveryDollar budgets. Money is already moving to kids. Nothing turns that transaction into a lesson.</p>
+  <div class="quote-row">
+    <blockquote>I wish I could communicate to my nephew how important his spending habits are.<cite>Kids &amp; Money customer interview</cite></blockquote>
+    <blockquote>One customer kept the Parent Guide in a closet until ready to start.<cite>Financial Peace Kids customer interview</cite></blockquote>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">02</span><h2>The research behind it</h2></div>
+  <p class="lede">This brief rests on more than the two research summaries quoted above. Both trace back to a single discovery board, "CP Highest Priority Customer Problems," covering two separate research efforts built from completed customer interviews rather than a survey, using the Continuous Discovery Habits opportunity-solution-tree method (Teresa Torres). What follows are the actual trees underneath the summaries.</p>
+  <p class="ost-source">Source: CP Highest Priority Customer Problems discovery board — Financial Peace Kids and Kids &amp; Money research.</p>
+
+  <div class="ost-block">
+    <span class="ost-kind">Opportunity Solution Tree — Physical kit</span>
+    <h3 class="ost-name">Financial Peace Kids</h3>
+    <div class="outcome-chips">
+      <div class="outcome-chip business"><span class="chip-label">Business outcome</span>Grow Financial Peace Kids revenue 25%, from $109,000 to $136,250 a year.</div>
+      <div class="outcome-chip"><span class="chip-label">Product outcome</span>Parents and children lay the groundwork for future financial winning and connect on the money topic every day.</div>
+    </div>
+    <div class="ost-subhead">Key opportunities</div>
+    <ul class="opp-quotes">
+      <li>"I wish it were two kits, one for ages 6–10 and another for 11–14."</li>
+      <li>"I wish I knew what to do if he loses interest."</li>
+      <li>"I want to be able to use one chore chart for multiple kids."</li>
+    </ul>
+    <div class="ost-subhead">Solutions on the tree</div>
+    <div class="solution-tags">
+      <div class="solution-tag">Quick-start guide<span class="tag shipped">Shipped — zero-setup give &amp; split</span></div>
+      <div class="solution-tag">Alternate way to track goals, beyond the coin tube<span class="tag shipped">Shipped — savings goal + progress bar</span></div>
+      <div class="solution-tag">One chore chart for multiple kids<span class="tag shipped">Shipped — multi-kid profiles</span></div>
+      <div class="solution-tag">Age up the packaging<span class="tag flag">Parked — teens 15+ out of scope</span></div>
+    </div>
+  </div>
+
+  <div class="ost-block">
+    <span class="ost-kind">Opportunity Solution Tree — Digital &amp; behavioral</span>
+    <h3 class="ost-name">Kids &amp; Money</h3>
+    <div class="outcome-chips">
+      <div class="outcome-chip business"><span class="chip-label">Business outcome</span>Create a profitable product that helps parents teach their kids about money.</div>
+      <div class="outcome-chip"><span class="chip-label">Product outcome, ages 3–6</span>Improve children's ability to distinguish needs vs. wants. The largest felt need.</div>
+      <div class="outcome-chip"><span class="chip-label">Product outcome, ages 7–15</span>Increase the frequency of children making smart spending and saving decisions.</div>
+      <div class="outcome-chip"><span class="chip-label">Product outcome, ages 16–18</span>Increase the percentage of children who independently track their spending.</div>
+    </div>
+    <div class="ost-subhead">Core need, center to edge</div>
+    <ol class="need-ladder">
+      <li style="padding-left:0">Parent wants to do better — learn more, learn the right things.</li>
+      <li style="padding-left:16px">→ wants to be a better teacher — communicate, be heard, teach the right things.</li>
+      <li style="padding-left:32px">→ wants to change their kid's money behavior — spend, save, give; discipline; release control.</li>
+      <li style="padding-left:48px">→ wants others speaking into their kids — the Ramsey plan, peers, content.</li>
+    </ol>
+    <div class="ost-subhead">Key opportunities</div>
+    <ul class="opp-quotes">
+      <li>"I wish I could communicate to my nephew how important his spending habits are."</li>
+      <li>"I wish there was video content for teens to reinforce the teaching."</li>
+    </ul>
+    <div class="ost-subhead">Solutions on the tree</div>
+    <div class="solution-tags">
+      <div class="solution-tag">EveryDollar for Kids<span class="tag shipped">Shipped — the Give / Save / Spend split</span></div>
+      <div class="solution-tag">Family Money Meeting Kit, 100-Day Family Money Challenge<span class="tag shipped">Shipped — streaks + recurring chores</span></div>
+      <div class="solution-tag">Micro habits / micro-conversations<span class="tag shipped">Shipped — notes on Give and Save</span></div>
+      <div class="solution-tag">Digital assessment to track progress<span class="tag shipped">Shipped — Savings Wins history</span></div>
+      <div class="solution-tag">Content for teens<span class="tag flag">Parked — teens 15+ out of scope</span></div>
+    </div>
+  </div>
+
+  <div class="ost-block">
+    <span class="ost-kind">Secondary tree, nested inside Kids &amp; Money</span>
+    <h3 class="ost-name">Too high a reliance on willpower</h3>
+    <p style="margin-bottom:14px; font-size:0.95rem; color:var(--ink-soft);">A smaller nudge-theory tree: motivation, friction, satisfaction, applied across three lanes so a family stays on plan without leaning on willpower alone.</p>
+    <div class="solution-tags">
+      <div class="solution-tag">Marketing — a fridge magnet reminder<span class="tag flag">Phase 2 — EveryDollar-linked reminder</span></div>
+      <div class="solution-tag">Product — a physical EveryDollar envelope system<span class="tag shipped">Shipped analog — recurring chore auto-reset</span></div>
+      <div class="solution-tag">Tech — an EveryDollar-branded bill-pay station<span class="tag flag">Phase 2 — see Section 08</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">03</span><h2>Target user</h2></div>
+  <p><strong>Primary:</strong> EveryDollar parents in the Baby Steps and FPU orbit, with kids age six to fourteen who already give an allowance or a chore commission.</p>
+  <p><strong>Acting user:</strong> the kid, during the split itself. The product's core interaction belongs to a six-to-fourteen-year-old, not the parent holding the account.</p>
+  <p><strong>Deliberately out of scope for this version:</strong> teens fifteen and older. Both research sets flag that this age group wants something less babyish than a bucket-splitting game. Building a teen experience without testing that assumption first would be guessing.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">04</span><h2>The loop</h2></div>
+  <p>A parent gives money, directly or through a paid chore. The kid splits it into Give, Save, and Spend and gets a small celebration for finishing. A streak counter and a named savings goal give the habit a reason to repeat. The chore board gives the parent a reason to open the app between paydays, not only on allowance day.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">05</span><h2>From insight to feature</h2></div>
+  <p class="lede">Each shipped feature traces back to a specific complaint from the research, not a hypothetical one.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Customer signal</th><th>What shipped</th><th>Why it matters</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="signal">"The Parent Guide is too dense to start."</td>
+          <td>Give money and split it in two taps. No setup screen.</td>
+          <td class="why">Removes the single most common activation complaint.</td>
+        </tr>
+        <tr>
+          <td class="signal">"One kit doesn't fit a family with more than one kid."</td>
+          <td>Separate profile, history, streak, and goal per kid.</td>
+          <td class="why">Matches how families actually use one household budget.</td>
+        </tr>
+        <tr>
+          <td class="signal">"Parents want a goal tracker, not just a chore chart."</td>
+          <td>Named savings goal with a progress bar and its own achievement screen.</td>
+          <td class="why">Makes delayed gratification visible instead of abstract.</td>
+        </tr>
+        <tr>
+          <td class="signal">"Consistency is harder to sustain than the initial idea."</td>
+          <td>Streak counter, plus chores that reset on a daily, weekly, or monthly schedule.</td>
+          <td class="why">Removes the manual re-setup that causes these systems to quietly lapse.</td>
+        </tr>
+        <tr>
+          <td class="signal">"Giving is an underused emotional hook."</td>
+          <td>Optional note and photo attached to what a Give was for.</td>
+          <td class="why">Turns generosity into something visible and worth repeating.</td>
+        </tr>
+        <tr>
+          <td class="signal">"Commission for chores is already a normal budget line."</td>
+          <td>Full chore board: parent sets a price, kid submits photo proof, parent pays, requests a redo, or dismisses.</td>
+          <td class="why">Converts an existing transaction into a teaching moment instead of a silent transfer.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">06</span><h2>How success gets measured</h2></div>
+  <p class="lede">The prototype has no instrumentation and no defined success metric today. This is what I would track before calling the feature validated, framed as targets to test rather than results already in hand.</p>
+  <div class="kpi-grid">
+    <div class="kpi-card north-star">
+      <div class="kpi-label">North Star — Weekly Split Rate</div>
+      <div class="kpi-value">&ge; 60%</div>
+      <p class="kpi-desc">Share of active kid profiles that complete at least one Give / Save / Spend split in a rolling 7-day window.</p>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">48-Hour Activation</div>
+      <div class="kpi-value">&ge; 70%</div>
+      <p class="kpi-desc">Newly added kids who complete a first split within 48 hours of being given money.</p>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">30-Day Streak Median</div>
+      <div class="kpi-value">&ge; 3 days</div>
+      <p class="kpi-desc">Median consecutive-day streak length among kids active at day 30.</p>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Chore Response Time</div>
+      <div class="kpi-value">&lt; 24 hrs</div>
+      <p class="kpi-desc">Median time between a chore being submitted and the parent paying or requesting a redo.</p>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Goal Completion Rate</div>
+      <div class="kpi-value">&ge; 35%</div>
+      <p class="kpi-desc">Kids with an active savings goal who reach it within 90 days.</p>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Commission Attach Rate</div>
+      <div class="kpi-value">&ge; 15%</div>
+      <p class="kpi-desc">EveryDollar households with an existing kids or commission budget line that activate Money Muscle within 30 days of launch.</p>
+      <div class="tag-row"><span class="tag">Business metric</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">07</span><h2>Why this matters to the business</h2></div>
+  <p>The Financial Peace Kids research already puts a number on the underlying opportunity: a stated goal of growing that product line's revenue 25%, from $109,000 to $136,250 a year. Money Muscle does not compete with that goal, it de-risks it. A digital feature carries almost none of the fulfillment cost of a physical kit, and reaches every EveryDollar household with kids, not only the ones who bought a box.</p>
+  <p>The stronger case is retention. A family with young kids stays on a budgeting product longer when the product earns a place in the household's routine beyond the parents' own budget. A chore board that pays out through EveryDollar money gives a family a daily reason to open the app that has nothing to do with reconciling a transaction.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">08</span><h2>Where this plugs into EveryDollar</h2></div>
+  <p>The prototype runs on local device storage, which is the right way to prove the interaction loop and the wrong foundation to ship on. Folding this into EveryDollar's existing account system does three things at once: it fixes the parent-and-kid-on-separate-devices gap that local storage cannot solve, it lets a real transaction on the kids-commission budget line trigger the split automatically instead of the parent re-typing an amount, and it lets a Save decision point at a real EveryDollar Fund instead of a second, disconnected goal tracker.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">09</span><h2>Trust and privacy</h2></div>
+  <p>This product touches a child's photos and activity, which makes privacy a launch gate, not a polish item. Before any real household uses this: a COPPA-aligned consent flow that a parent, not the child, completes; account creation gated behind the parent's own EveryDollar login rather than a separate child sign-up; no third-party analytics or advertising code touching child data; and a clear, working delete path for a child's photos and history.</p>
+  <p>None of this exists in the prototype today. It was deliberately deferred so the interaction loop stayed the thing being tested, not a compliance exercise. It is the first thing that has to be built before this leaves prototype status.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">10</span><h2>How I would validate it</h2></div>
+  <p>Everything here was built against secondary research: two existing rounds of customer discovery, not a new study commissioned for this feature. Before trusting it further, I would run five to eight moderated sessions with current EveryDollar parents who already have a kids or commission line, watching the give-split-chore loop rather than asking about it. Then a four-week opt-in beta with twenty to thirty households, instrumented against the metrics in Section 06, before any wider rollout. That beta is also where I would re-test the teen age-band assumption directly instead of guessing at it.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">11</span><h2>Deliberate tradeoffs</h2></div>
+  <p class="lede">A few decisions here were made on purpose, not by accident.</p>
+  <ul class="cut-list">
+    <li><strong>Cut a separate teen experience.</strong> Both research sets ask for one, but shipping it without testing the assumption first would be a guess wearing a feature's clothes.</li>
+    <li><strong>Cut a standalone savings-goal system</strong> in favor of eventually pointing Save at a real EveryDollar Fund. Two trackers for the same number is worse than one.</li>
+    <li><strong>Accepted local-device storage</strong> as a known limitation of the prototype, not a design choice for the eventual product. Phase 2 depends on real account infrastructure.</li>
+    <li><strong>Left instrumentation, consent flow, and go-to-market out of the prototype</strong> and into this brief instead. Building them before the core loop was proven would have spent effort on the wrong risk first.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">12</span><h2>Rollout</h2></div>
+  <ul class="phase-list">
+    <li class="phase-item">
+      <span class="phase-tag">Phase 1</span>
+      <div class="phase-body"><strong>Prove the loop</strong><p>Ship the prototype against existing research: give, split, chore board, goals, streaks. Done.</p></div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-tag">Phase 2</span>
+      <div class="phase-body"><strong>Plug into EveryDollar</strong><p>Shared accounts, transaction-triggered giving, Fund-linked goals, COPPA-aligned consent.</p></div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-tag">Phase 3</span>
+      <div class="phase-body"><strong>Validate with real families</strong><p>Moderated sessions, then a 20-to-30-household beta instrumented against Section 06.</p></div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-tag">Phase 4</span>
+      <div class="phase-body"><strong>Launch to the highest-intent cohort first</strong><p>EveryDollar households that already have a kids or commission budget line, ahead of a general release.</p></div>
+    </li>
+  </ul>
+</section>
+
+<hr class="rule">
+<footer>Prepared as a walkthrough artifact for Product Manager and Senior Product Manager interviews.</footer>
+
+</div>

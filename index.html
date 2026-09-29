@@ -132,6 +132,57 @@
     color: var(--mm-gray-90);
   }
 
+  .instructions-card {
+    padding: 16px 20px;
+  }
+
+  .instructions-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--mm-gray-90);
+    cursor: pointer;
+  }
+
+  .instructions-chevron {
+    font-size: 1rem;
+    color: var(--mm-blue);
+    transition: transform 0.2s ease;
+  }
+
+  .instructions-chevron.open {
+    transform: rotate(180deg);
+  }
+
+  .instructions-body {
+    margin-top: 14px;
+    font-size: 0.95rem;
+    color: var(--mm-gray-90);
+    line-height: 1.5;
+  }
+
+  .instructions-body p {
+    margin: 0 0 10px;
+  }
+
+  .instructions-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .instructions-body .instructions-section-title {
+    font-weight: 700;
+    color: var(--mm-green-dark);
+    font-size: 1rem;
+  }
+
   .kid-pills {
     display: flex;
     gap: 8px;
@@ -212,6 +263,35 @@
     cursor: pointer;
     white-space: nowrap;
     box-shadow: 0 4px 0 var(--mm-blue-dark);
+  }
+
+  .brief-card {
+    padding: 16px 20px;
+  }
+
+  .brief-caption {
+    color: var(--mm-gray-70);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+  }
+
+  .brief-btn {
+    display: inline-block;
+    border: none;
+    background: var(--mm-blue);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 12px;
+    padding: 12px 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--mm-blue-dark);
+    text-decoration: none;
+  }
+
+  .brief-btn:active {
+    transform: scale(0.97);
   }
 
   .add-kid-btn:active {
@@ -1180,6 +1260,30 @@
 
     <!-- PARENT VIEW -->
     <div class="view" id="viewParent">
+      <div class="card instructions-card">
+        <button class="instructions-toggle" id="instructionsToggle" aria-expanded="false" aria-controls="instructionsBody">
+          <span>📖 Start Here</span>
+          <span class="instructions-chevron" id="instructionsChevron">▾</span>
+        </button>
+        <div class="instructions-body" id="instructionsBody" style="display:none;">
+          <p><strong>What is Money Muscle?</strong> It helps your kids build real money habits by giving every dollar a job — <strong>Give</strong>, <strong>Save</strong>, or <strong>Spend</strong> — instead of it just sitting around.</p>
+
+          <p><strong>1. Add your kids.</strong> Use the "Your Kids" card below to add each child who'll be using the app.</p>
+
+          <p><strong>2. Set up chores (optional).</strong> Add chores with a price in the "Chores" card. Your kid can mark one done — with a photo of the finished work — and you'll get a notification here to pay them, ask for a redo, or dismiss it.</p>
+
+          <p><strong>3. Give money.</strong> Whether it's chore pay or just an allowance, use "Give Money" to send an amount to a specific kid. You can also set a savings goal for them to work toward.</p>
+
+          <p class="instructions-section-title">🤝 Then hand it over</p>
+          <p>Once you've given money (or paid for a chore), switch to the <strong>🧒 Kid</strong> tab above and hand your child the device. They'll see how much they have and decide how to split it between Give, Save, and Spend themselves — that's the whole exercise. When they're done, come back to the Parent tab to see their totals, past rounds, and streak.</p>
+        </div>
+      </div>
+
+      <div class="card brief-card">
+        <p class="brief-caption">📋 The product strategy write-up behind this build: problem, research, metrics, and roadmap.</p>
+        <a class="brief-btn" href="money-muscle-brief.html" target="_blank" rel="noopener">Open the Product Strategy Brief →</a>
+      </div>
+
       <div class="card">
         <h2>Your Kids</h2>
         <div class="kid-pills" id="parentKidPills"></div>
@@ -1907,6 +2011,17 @@
     }
 
     // ---------- Parent view ----------
+
+    const instructionsToggle = document.getElementById('instructionsToggle');
+    const instructionsBody = document.getElementById('instructionsBody');
+    const instructionsChevron = document.getElementById('instructionsChevron');
+
+    instructionsToggle.addEventListener('click', () => {
+      const isOpen = instructionsBody.style.display === 'block';
+      instructionsBody.style.display = isOpen ? 'none' : 'block';
+      instructionsChevron.classList.toggle('open', !isOpen);
+      instructionsToggle.setAttribute('aria-expanded', String(!isOpen));
+    });
 
     const parentKidPillsEl = document.getElementById('parentKidPills');
     const newKidNameInput = document.getElementById('newKidName');
