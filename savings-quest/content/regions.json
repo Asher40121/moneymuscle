@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "_note": "Placeholder shape for Stage 1. Real regions are built starting in Stage 4. 'landmarkRef' signals intent — the kid's real savings goal is meant to appear as a landmark in the world — but nothing reads this field yet.",
+  "regions": [
+    {
+      "id": "meadow",
+      "name": "Sunny Meadow",
+      "unlocksAtLevel": 1,
+      "landmarkRef": "activeGoal",
+      "bossId": null
+    }
+  ]
+}

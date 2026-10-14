@@ -1,0 +1,164 @@
+// Savings Quest — progression engine.
+//
+// Pure functions only: no localStorage, no DOM, no Date.now() calls baked
+// in. Everything that varies (current time, stored ledgers) comes in as a
+// parameter, so this file can be unit-tested directly in Node with no
+// browser and no mocking.
+
+import { CONFIG } from "./config.js";
+
+// ---------------------------------------------------------------------
+// Level curve
+// ---------------------------------------------------------------------
+
+// Cumulative Save-track XP required to REACH `level` (level 0 = 0 XP).
+export function xpToReachLevel(level) {
+  if (level <= 0) return 0;
+  return Math.round(CONFIG.LEVEL_XP_BASE * Math.pow(level, CONFIG.LEVEL_XP_EXPONENT));
+}
+
+// Given lifetime Save-track XP, returns the current level (capped at
+// MAX_LEVEL) plus progress toward the next level. Level never decreases
+// by construction — it's a pure function of a monotonically-increasing
+// input (lifetime XP only ever grows, enforced in data.js).
+export function levelForTotalXp(totalXp) {
+  const safeXp = Math.max(0, totalXp);
+  let level = 0;
+  while (level < CONFIG.MAX_LEVEL && safeXp >= xpToReachLevel(level + 1)) {
+    level++;
+  }
+  const xpForCurrentLevel = xpToReachLevel(level);
+  const xpForNextLevel = level >= CONFIG.MAX_LEVEL ? null : xpToReachLevel(level + 1);
+  return {
+    level,
+    totalXp: safeXp,
+    xpIntoLevel: safeXp - xpForCurrentLevel,
+    xpForNextLevel: xpForNextLevel === null ? null : xpForNextLevel - xpForCurrentLevel,
+    isMaxLevel: level >= CONFIG.MAX_LEVEL,
+  };
+}
+
+// ---------------------------------------------------------------------
+// Streaks (weekly, mirrors the existing daily-streak logic in index.html)
+// ---------------------------------------------------------------------
+
+// weekKeysWithSave: Set<string> of week-start keys that had >=1 Save event.
+// orderedWeekKeysDescending: array of week-start keys, most recent first
+// (index 0 = this week, index 1 = last week, ...).
+//
+// Mirrors computeStreak()'s day-level logic at week granularity: the
+// streak is "still alive" if last week had activity even if this week
+// doesn't yet, since this week isn't over.
+export function computeStreakWeeks(weekKeysWithSave, orderedWeekKeysDescending) {
+  if (orderedWeekKeysDescending.length === 0) return 0;
+
+  let idx = 0;
+  if (!weekKeysWithSave.has(orderedWeekKeysDescending[0])) {
+    idx = 1;
+    if (
+      orderedWeekKeysDescending.length < 2 ||
+      !weekKeysWithSave.has(orderedWeekKeysDescending[1])
+    ) {
+      return 0;
+    }
+  }
+
+  let streak = 0;
+  for (; idx < orderedWeekKeysDescending.length; idx++) {
+    if (weekKeysWithSave.has(orderedWeekKeysDescending[idx])) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+// streakWeeks counts the current week too (see computeStreakWeeks), so a
+// brand-new saver's very first week is streakWeeks=1 — that's one data
+// point, not a streak, so it earns no bonus. The multiplier only grows
+// from the SECOND consecutive week onward.
+export function streakMultiplier(streakWeeks) {
+  const bonusWeeks = Math.max(0, streakWeeks - 1);
+  return Math.min(
+    CONFIG.STREAK_MAX_MULTIPLIER,
+    1 + bonusWeeks * CONFIG.STREAK_GROWTH_PER_WEEK,
+  );
+}
+
+// ---------------------------------------------------------------------
+// Anti-farming: net Save growth after accounting for recent withdrawals
+// ---------------------------------------------------------------------
+
+// pendingWithdrawals: array of { amount, at (ISO string), remaining }.
+// Returns the portion of `grossAmount` that counts as genuinely NEW
+// savings (eligible for XP), plus the updated withdrawal list (expired
+// or fully-absorbed entries removed).
+export function computeNetSaveGrowth({
+  grossAmount,
+  pendingWithdrawals,
+  now,
+  reversalWindowDays = CONFIG.REVERSAL_WINDOW_DAYS,
+}) {
+  const cutoff = new Date(now).getTime() - reversalWindowDays * 24 * 60 * 60 * 1000;
+  let remainingGross = grossAmount;
+  const updatedWithdrawals = [];
+
+  for (const w of pendingWithdrawals) {
+    const withinWindow = new Date(w.at).getTime() >= cutoff;
+    if (!withinWindow || w.remaining <= 0) continue;
+
+    if (remainingGross > 0) {
+      const absorbed = Math.min(w.remaining, remainingGross);
+      remainingGross -= absorbed;
+      const newRemaining = w.remaining - absorbed;
+      if (newRemaining > 0) updatedWithdrawals.push({ ...w, remaining: newRemaining });
+    } else {
+      updatedWithdrawals.push(w);
+    }
+  }
+
+  return { netAmount: Math.max(0, remainingGross), updatedWithdrawals };
+}
+
+// ---------------------------------------------------------------------
+// XP calculations per track
+// ---------------------------------------------------------------------
+
+export function computeSaveXp({ netAmount, streakWeeks }) {
+  const multiplier = streakMultiplier(streakWeeks);
+  return Math.round(netAmount * CONFIG.SAVE_XP_PER_DOLLAR * multiplier);
+}
+
+export function computeHeartXp(giveAmount) {
+  return Math.round(Math.max(0, giveAmount) * CONFIG.HEART_PER_DOLLAR_GIVEN);
+}
+
+export function computeStaminaXp(chorePrice) {
+  return Math.round(Math.max(0, chorePrice) * CONFIG.STAMINA_PER_DOLLAR_CHORE);
+}
+
+// ---------------------------------------------------------------------
+// Milestones
+// ---------------------------------------------------------------------
+
+// Returns the subset of CONFIG.MILESTONE_THRESHOLDS newly crossed by
+// going from priorSaveTotal to newSaveTotal against goalTarget. Returns
+// [] if there's no goal (goalTarget is null/undefined/<=0).
+export function checkMilestonesCrossed({ priorSaveTotal, newSaveTotal, goalTarget }) {
+  if (!goalTarget || goalTarget <= 0) return [];
+  const priorFraction = priorSaveTotal / goalTarget;
+  const newFraction = newSaveTotal / goalTarget;
+  return CONFIG.MILESTONE_THRESHOLDS.filter(
+    (threshold) => priorFraction < threshold && newFraction >= threshold,
+  );
+}
+
+// ---------------------------------------------------------------------
+// Withdrawals / Power Charge — never touches level or lifetime XP.
+// ---------------------------------------------------------------------
+
+export function applyWithdrawalToPowerCharge({ currentPowerCharge, amountWithdrawn }) {
+  const drain = Math.max(0, amountWithdrawn) * CONFIG.POWER_CHARGE_DRAIN_PER_DOLLAR_WITHDRAWN;
+  return Math.max(0, Math.min(CONFIG.POWER_CHARGE_MAX, currentPowerCharge - drain));
+}

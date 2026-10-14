@@ -1,0 +1,8 @@
+{
+  "name": "savings-quest",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

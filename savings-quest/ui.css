@@ -1,0 +1,380 @@
+/* Savings Quest — styles.
+   Reuses the --mm-* tokens defined in index.html (custom properties
+   cascade document-wide regardless of which stylesheet declares them),
+   so this stays visually consistent with the rest of the app without
+   duplicating the palette. */
+
+.sq-panel {
+  margin-bottom: 20px;
+}
+
+.sq-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 6px 0 rgba(18, 116, 47, 0.1);
+  margin-bottom: 16px;
+}
+
+.sq-card h2 {
+  margin: 0 0 14px;
+  font-size: 1.2rem;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  color: var(--mm-gray-90);
+}
+
+/* ---------- Density modes ----------
+   "young" = ages 6-9: bigger touch targets, bigger text, more icons.
+   "older" = ages 10-14: more compact, same components. Default (no
+   class yet, e.g. before hero creation) behaves like "older". */
+
+.sq-density-young {
+  --sq-tap-size: 56px;
+  --sq-font-scale: 1.15;
+  --sq-gap: 14px;
+}
+
+.sq-density-older {
+  --sq-tap-size: 44px;
+  --sq-font-scale: 1;
+  --sq-gap: 10px;
+}
+
+.sq-panel {
+  font-size: calc(1rem * var(--sq-font-scale, 1));
+}
+
+/* ---------- Option grids (look / palette / class / density pickers) ---------- */
+
+.sq-option-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sq-gap, 10px);
+  margin-bottom: 16px;
+}
+
+.sq-option-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: var(--sq-tap-size, 44px);
+  min-height: var(--sq-tap-size, 44px);
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 3px solid var(--mm-gray-10);
+  background: var(--mm-gray-10);
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--mm-gray-90);
+  cursor: pointer;
+}
+
+.sq-option-btn:focus-visible {
+  outline: 3px solid var(--mm-blue);
+  outline-offset: 2px;
+}
+
+.sq-option-btn[aria-pressed="true"] {
+  border-color: var(--mm-blue);
+  background: var(--mm-blue-bg);
+}
+
+.sq-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
+.sq-class-flavor {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--mm-gray-70);
+  text-align: center;
+}
+
+.sq-text-input {
+  width: 100%;
+  border: 2px solid var(--mm-gray-10);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+.sq-text-input:focus {
+  outline: none;
+  border-color: var(--mm-blue);
+}
+
+.sq-primary-btn {
+  display: block;
+  width: 100%;
+  border: none;
+  background: var(--mm-green);
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-radius: 14px;
+  padding: 14px 0;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--mm-green-dark);
+}
+
+.sq-primary-btn:disabled {
+  background: var(--mm-gray-50);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.sq-secondary-btn {
+  display: block;
+  width: 100%;
+  border: none;
+  background: var(--mm-blue);
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 12px;
+  padding: 12px 0;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--mm-blue-dark);
+}
+
+/* ---------- Hero card ---------- */
+
+.sq-hero-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.sq-hero-avatar {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.sq-hero-name {
+  font-family: "Poppins", sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--mm-gray-90);
+}
+
+.sq-hero-level {
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--mm-green-dark);
+}
+
+.sq-xp-track {
+  background: var(--mm-gray-10);
+  border-radius: 999px;
+  height: 16px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.sq-xp-fill {
+  background: var(--mm-green);
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.sq-xp-label {
+  font-size: 0.8rem;
+  color: var(--mm-gray-70);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.sq-next-unlock {
+  background: var(--mm-amber-bg);
+  color: var(--mm-amber-dark);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* ---------- Milestone path ---------- */
+
+.sq-milestone-path {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+
+.sq-milestone-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  position: relative;
+}
+
+.sq-milestone-node:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 55%;
+  width: 90%;
+  height: 4px;
+  background: var(--mm-gray-10);
+  z-index: 0;
+}
+
+.sq-milestone-node.reached:not(:last-child)::after {
+  background: var(--mm-green);
+}
+
+.sq-milestone-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--mm-gray-10);
+  color: var(--mm-gray-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  z-index: 1;
+}
+
+.sq-milestone-node.reached .sq-milestone-dot {
+  background: var(--mm-green);
+  color: #fff;
+}
+
+.sq-milestone-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mm-gray-70);
+}
+
+/* ---------- Goal propose / pending ---------- */
+
+.sq-pending-note {
+  background: var(--mm-amber-bg);
+  border: 2px dashed var(--mm-amber);
+  color: var(--mm-amber-dark);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------- Parent approval card ---------- */
+
+.sq-approval-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.sq-approval-row .sq-primary-btn,
+.sq-approval-row .sq-decline-btn {
+  flex: 1;
+}
+
+.sq-decline-btn {
+  border: none;
+  background: none;
+  color: var(--mm-blue);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- Feedback moments ---------- */
+
+.sq-coin-burst {
+  position: fixed;
+  pointer-events: none;
+  font-size: 1.8rem;
+  z-index: 1200;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-sq-motion="on"] .sq-coin-burst {
+    animation: sq-coin-fly 1.1s ease-out forwards;
+  }
+}
+
+@keyframes sq-coin-fly {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--sq-coin-dx, 0), var(--sq-coin-dy, -80px)) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.sq-levelup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 53, 20, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1300;
+}
+
+.sq-levelup-card {
+  background: linear-gradient(135deg, var(--mm-green-bg) 0%, var(--mm-yellow-bg) 100%);
+  border: 3px dashed var(--mm-green);
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  max-width: 320px;
+}
+
+[data-sq-motion="on"] .sq-levelup-card {
+  animation: sq-pop-in 0.4s ease-out;
+}
+
+@keyframes sq-pop-in {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.sq-levelup-card h2 {
+  font-family: "Poppins", sans-serif;
+  color: var(--mm-green-dark);
+  font-size: 1.6rem;
+  margin: 8px 0;
+}
+
+.sq-levelup-done-btn {
+  border: none;
+  background: var(--mm-green);
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-radius: 14px;
+  padding: 12px 28px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--mm-green-dark);
+  margin-top: 12px;
+}

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "_note": "Placeholder shape for Stage 1. The real skill tree is built in Stage 3. Edit this file to add/change skills — no code changes needed.",
+  "skills": [
+    {
+      "id": "steady_saver",
+      "name": "Steady Saver",
+      "unlocksAtLevel": 3,
+      "description": "Unlocks at Level 3."
+    }
+  ]
+}

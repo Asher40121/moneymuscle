@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "_note": "Placeholder shape for Stage 1. Real weapons/gear are built in Stage 3. Edit this file to add/change items — no code changes needed.",
+  "items": [
+    {
+      "id": "starter_sword",
+      "name": "Training Sword",
+      "type": "weapon",
+      "unlocksAtLevel": 1,
+      "description": "Every hero starts here."
+    },
+    {
+      "id": "copper_shield",
+      "name": "Copper Shield",
+      "type": "gear",
+      "unlocksAtLevel": 5,
+      "description": "Unlocks at Level 5."
+    }
+  ]
+}

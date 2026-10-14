@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="savings-quest/ui.css">
 <style>
   :root {
     --mm-blue: #1467e0;
@@ -1284,6 +1285,8 @@
         <a class="brief-btn" href="money-muscle-brief.html" target="_blank" rel="noopener">Open the Product Strategy Brief →</a>
       </div>
 
+      <div id="savingsQuestParentPanel"></div>
+
       <div class="card">
         <h2>Your Kids</h2>
         <div class="kid-pills" id="parentKidPills"></div>
@@ -1378,6 +1381,8 @@
 
       <div id="kidHasKidArea" style="display:none;">
         <div class="streak-badge" id="kidStreakBadge">🔥 0-day streak</div>
+
+        <div id="savingsQuestKidPanel"></div>
 
         <div id="kidChoreMessages"></div>
 
@@ -2199,6 +2204,15 @@
           pending[record.kidId] = (pending[record.kidId] || 0) + record.price;
           savePending(pending);
           markChoreCompletionPaid(id, note);
+
+          // Savings Quest (behind its own feature flag; no-ops if disabled
+          // or not loaded). Never allowed to break the real payment flow.
+          try {
+            window.SavingsQuest?.onChoreApproved?.(record);
+          } catch (e) {
+            console.error('SavingsQuest onChoreApproved failed:', e);
+          }
+
           payComposerId = null;
           renderParentView();
         });
@@ -2327,6 +2341,12 @@
 
       const streak = computeStreak(rounds);
       parentStreakBadge.textContent = `🔥 ${streak}-day streak`;
+
+      try {
+        window.SavingsQuest?.renderParentPanel?.();
+      } catch (e) {
+        console.error('SavingsQuest renderParentPanel failed:', e);
+      }
 
       renderGoalBlock(parentGoalDisplay, activeId, true);
 
@@ -2686,6 +2706,12 @@
 
       renderKidChoreMessages(activeId);
 
+      try {
+        window.SavingsQuest?.renderKidPanel?.();
+      } catch (e) {
+        console.error('SavingsQuest renderKidPanel failed:', e);
+      }
+
       const wins = getCompletedGoalsFor(activeId);
       kidSavingsWinsCard.style.display = wins.length > 0 ? 'block' : 'none';
       if (wins.length > 0) renderSavingsWinsList(kidSavingsWinsList, activeId);
@@ -2704,7 +2730,16 @@
         kidNoMoney.style.display = 'none';
         kidSplitArea.style.display = 'none';
         goalCelebrationScreen.style.display = 'block';
-        goalCelebrationText.textContent = `You saved $${goalCelebrating.target} for "${goalCelebrating.name}"! 🎉`;
+        let celebrationMessage = `You saved $${goalCelebrating.target} for "${goalCelebrating.name}"! 🎉`;
+        try {
+          const hero = window.SavingsQuest?.isEnabled?.() ? window.SavingsQuest.getHero(activeId) : null;
+          if (hero && hero.name) {
+            celebrationMessage += ` ${hero.name} celebrates with you — Level ${hero.level}!`;
+          }
+        } catch (e) {
+          console.error('SavingsQuest celebration bonus failed:', e);
+        }
+        goalCelebrationText.textContent = celebrationMessage;
         return;
       }
 
@@ -2816,8 +2851,7 @@
         const goal = getGoal(activeId);
         const priorSaveTotal = computeTotals(roundsForKid(activeId)).save;
 
-        const rounds = loadRounds();
-        rounds.push({
+        const round = {
           id: Date.now(),
           kidId: activeId,
           amount: currentAmount,
@@ -2829,9 +2863,19 @@
           saveImage: pendingImages.save,
           giveImage: pendingImages.give,
           completedAt: new Date().toISOString(),
-        });
+        };
+        const rounds = loadRounds();
+        rounds.push(round);
         saveRounds(rounds);
         clearPendingFor(activeId);
+
+        // Savings Quest (behind its own feature flag; no-ops if disabled
+        // or not loaded). Never allowed to break the real split flow.
+        try {
+          window.SavingsQuest?.onSplitCompleted?.({ round, priorSaveTotal, goal });
+        } catch (e) {
+          console.error('SavingsQuest onSplitCompleted failed:', e);
+        }
 
         let completedGoal = null;
         if (goal) {
@@ -2879,5 +2923,9 @@
     const initialView = localStorage.getItem(ACTIVE_VIEW_KEY) === 'kid' ? 'kid' : 'parent';
     switchView(initialView);
   </script>
+
+  <!-- Savings Quest: native ES module, no bundler. Behind the savingsQuest
+       feature flag (off by default) — see savings-quest/bootstrap.js. -->
+  <script type="module" src="savings-quest/bootstrap.js"></script>
 </body>
 </html>

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "_note": "Placeholder shape for Stage 1. Real NPCs and their lessons are built in Stage 4. Edit this file to add/change NPCs — no code changes needed.",
+  "npcs": [
+    {
+      "id": "coach_penny",
+      "name": "Coach Penny",
+      "lesson": "Saving a little, often, beats saving a lot, rarely.",
+      "appearsInRegion": "meadow"
+    }
+  ]
+}
