@@ -27,6 +27,7 @@ import {
 } from "./unlocks.js";
 import { createWorld } from "./world.js";
 import { CONFIG } from "./config.js";
+import { isDailyCheckinQuestComplete, isWeeklySavingsRaidComplete } from "./quests-engine.js";
 
 function escapeHtml(str) {
   if (window.escapeHtml) return window.escapeHtml(str);
@@ -406,6 +407,56 @@ export function createUi({ store, catalogs }) {
     queueUnlockReveal(kidId, newly);
   }
 
+  // Stage 6: the Daily Check-In and Weekly Savings Raid quests.
+  // Evaluated on every Kid-panel render (same cadence as
+  // evaluateAndRevealUnlocks) — checking in or hitting the weekly
+  // target doesn't reward instantly mid-action, but the very next
+  // panel render (the next split, chore, or just reopening the World
+  // tab) always catches up, and completeQuest's idempotency means
+  // re-checking costs nothing.
+  function evaluateQuests(kidId) {
+    if (!catalogs.quests) return;
+    const now = new Date().toISOString();
+    const worldState = store.getWorldState(kidId);
+    const completed = [];
+
+    const dailyQuest = catalogs.quests.quests.find((q) => q.id === "daily_checkin");
+    if (dailyQuest && isDailyCheckinQuestComplete(worldState.lastCheckInDate, now)) {
+      const result = store.completeQuest(kidId, dailyQuest.id, now.slice(0, 10), dailyQuest.rewardXp, now);
+      if (result.written) completed.push(dailyQuest);
+    }
+
+    const weeklyQuest = catalogs.quests.quests.find((q) => q.id === "weekly_savings_raid");
+    if (weeklyQuest) {
+      const weeklyDollars = store.getWeeklySaveDollars(kidId, now);
+      if (isWeeklySavingsRaidComplete(weeklyDollars, weeklyQuest.targetAmount)) {
+        const result = store.completeQuest(kidId, weeklyQuest.id, store.getWeekKey(now), weeklyQuest.rewardXp, now);
+        if (result.written) completed.push(weeklyQuest);
+      }
+    }
+
+    if (completed.length > 0) showQuestCompleteOverlay(completed[0]);
+  }
+
+  function showQuestCompleteOverlay(quest) {
+    const overlay = document.createElement("div");
+    overlay.className = "sq-levelup-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-label", `Quest complete: ${quest.name}`);
+    overlay.innerHTML = `
+      <div class="sq-levelup-card">
+        <div style="font-size:3rem;" aria-hidden="true">🏆</div>
+        <h2>Quest Complete!</h2>
+        <p>${escapeHtml(quest.name)}: +${quest.rewardXp} XP</p>
+        <button type="button" class="sq-levelup-done-btn">Nice!</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const doneBtn = overlay.querySelector("button");
+    doneBtn.addEventListener("click", () => overlay.remove());
+    doneBtn.focus();
+  }
+
   let revealQueue = [];
   let revealKidId = null;
 
@@ -655,6 +706,7 @@ export function createUi({ store, catalogs }) {
     }
 
     evaluateAndRevealUnlocks(kidId);
+    evaluateQuests(kidId);
 
     const hero = store.getHero(kidId);
     container.className = `sq-panel ${densityClass(hero)}`;

@@ -15,7 +15,7 @@ import {
   computeSaveXp,
   computeHeartXp,
   computeStaminaXp,
-  computeStreakWeeks,
+  computeStreakWeeksWithFreeze,
   levelForTotalXp,
   applyWithdrawalToPowerCharge,
 } from "./engine.js";
@@ -105,8 +105,20 @@ function migrate(versioned, fallbackData) {
 }
 
 export function createSavingsQuestStore(storage) {
+  // Stage 6 hardening: Safari private browsing (older versions) throws
+  // on localStorage.getItem/setItem rather than just failing silently,
+  // and any browser can throw QuotaExceededError once storage fills
+  // up. Both are now caught rather than propagating — reading falls
+  // back to the same default a missing/corrupt key already uses;
+  // writing degrades to "didn't persist this one change" instead of
+  // crashing whatever XP/game-state write was in progress.
   function load(key, fallbackData) {
-    const raw = storage.getItem(key);
+    let raw;
+    try {
+      raw = storage.getItem(key);
+    } catch {
+      return structuredClone(fallbackData);
+    }
     if (raw === null) return structuredClone(fallbackData);
     try {
       const parsed = JSON.parse(raw);
@@ -117,7 +129,11 @@ export function createSavingsQuestStore(storage) {
   }
 
   function save(key, data) {
-    storage.setItem(key, JSON.stringify({ _v: SCHEMA_VERSION, data }));
+    try {
+      storage.setItem(key, JSON.stringify({ _v: SCHEMA_VERSION, data }));
+    } catch (err) {
+      console.warn(`Savings Quest: couldn't persist "${key}" (storage unavailable or full).`, err);
+    }
   }
 
   // --- game_settings (per family and per child) ---
@@ -328,7 +344,11 @@ export function createSavingsQuestStore(storage) {
         .filter((e) => e.track === "save")
         .map((e) => startOfWeekKey(e.createdAt)),
     );
-    return computeStreakWeeks(weekKeys, descendingWeekKeys(now));
+    // Stage 6: the free streak freeze applies here too, so the displayed
+    // streak always matches what recordSaveEvent's XP multiplier actually
+    // used — a kid never sees "streak: 3" on screen while secretly
+    // earning a lower multiplier under the hood, or vice versa.
+    return computeStreakWeeksWithFreeze(weekKeys, descendingWeekKeys(now), CONFIG.STREAK_FREE_FREEZES).streak;
   }
 
   // --- pending withdrawals (anti-farming support table) ---
@@ -542,19 +562,59 @@ export function createSavingsQuestStore(storage) {
     return all[kidId] || {};
   }
 
+  // Dollars actually saved (net of any anti-farming adjustment) within
+  // the current Monday-start week — the Weekly Savings Raid's progress
+  // number, computed fresh from the ledger rather than tracked
+  // separately, so it can never drift out of sync with real XP history.
+  function getWeeklySaveDollars(kidId, now) {
+    const weekKey = startOfWeekKey(now);
+    return ledgerForKid(kidId)
+      .filter((e) => e.track === "save" && startOfWeekKey(e.createdAt) === weekKey)
+      .reduce((sum, e) => sum + (e.meta?.netAmount || 0), 0);
+  }
+
+  // Idempotent per period (periodKey is a calendar-day string for
+  // 'daily' quests, a week-start key for 'weekly' ones) — replaying
+  // this within the same period never double-grants the reward, same
+  // idempotency spirit as everything else in this file. The reward
+  // writes to the "quest" ledger track, which counts toward level
+  // exactly like "save" and "bonus" do (see recomputeHeroState).
+  function completeQuest(kidId, questId, periodKey, rewardXp, now) {
+    const progress = getQuestProgress(kidId);
+    if (progress[questId] === periodKey) {
+      return { written: false, hero: getHero(kidId) };
+    }
+    progress[questId] = periodKey;
+    const all = load(KEYS.questProgress, {});
+    all[kidId] = progress;
+    save(KEYS.questProgress, all);
+
+    appendLedgerEntry({
+      kidId,
+      sourceEventId: newId(`mm_quest_${questId}`),
+      track: "quest",
+      amount: Math.max(0, Math.round(rewardXp)),
+      meta: { questId, periodKey },
+      createdAt: now,
+    });
+
+    return { written: true, hero: recomputeHeroState(kidId) };
+  }
+
   // --- recompute: single source of truth for deriving hero state from
   // the ledger. Called after every write so hero.level/totalXp is always
   // just a projection of the ledger, never hand-edited.
 
   function recomputeHeroState(kidId) {
     const entries = ledgerForKid(kidId);
-    // "bonus" (Stage 5's manual parent-granted XP) counts toward level
-    // the same as "save" — it's XP for a real money decision, same
-    // spirit as Save itself, just parent-recognized rather than
-    // formula-derived. Everything else about "level never decreases"
-    // still holds: bonus grants are only ever positive amounts.
+    // "bonus" (Stage 5's manual parent-granted XP) and "quest" (Stage
+    // 6's daily/weekly quest rewards) both count toward level the same
+    // as "save" — each is XP for a real money behavior, just granted a
+    // different way than the formula-derived Save track. Everything
+    // about "level never decreases" still holds: both are only ever
+    // positive amounts.
     const saveXpTotal = entries
-      .filter((e) => e.track === "save" || e.track === "bonus")
+      .filter((e) => e.track === "save" || e.track === "bonus" || e.track === "quest")
       .reduce((sum, e) => sum + e.amount, 0);
     const heartTotal = entries
       .filter((e) => e.track === "heart")
@@ -607,7 +667,9 @@ export function createSavingsQuestStore(storage) {
         .map((e) => startOfWeekKey(e.createdAt)),
     );
     weekKeys.add(startOfWeekKey(now));
-    const streakWeeks = computeStreakWeeks(weekKeys, descendingWeekKeys(now));
+    // Stage 6: free streak freeze — tolerates one missed week without
+    // resetting the multiplier to "no streak," matching getCurrentStreakWeeks.
+    const streakWeeks = computeStreakWeeksWithFreeze(weekKeys, descendingWeekKeys(now), CONFIG.STREAK_FREE_FREEZES).streak;
 
     // Stage 5: the kid's XP-rate preset (Gentle/Standard/Challenging)
     // and, if the parent turned it on, the parent-match bonus both
@@ -864,6 +926,9 @@ export function createSavingsQuestStore(storage) {
     getPuzzleSolvesSince,
     getQuests,
     getQuestProgress,
+    getWeeklySaveDollars,
+    completeQuest,
+    getWeekKey: startOfWeekKey,
     recomputeHeroState,
     recordSaveEvent,
     recordGiveEvent,

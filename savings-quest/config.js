@@ -25,6 +25,13 @@ export const CONFIG = {
   STREAK_MAX_MULTIPLIER: 2.0,
 
   // ---------------------------------------------------------------------
+  // STREAK FREEZE (Stage 6) — how many missed weeks in a row are
+  // forgiven before a streak actually breaks. Free, always available,
+  // never purchased or earned — see engine.js's computeStreakWeeksWithFreeze.
+  // ---------------------------------------------------------------------
+  STREAK_FREE_FREEZES: 1,
+
+  // ---------------------------------------------------------------------
   // MILESTONES — fractions of a kid's active savings goal. Crossing one
   // writes a goals_milestones entry (separate from, and not a replacement
   // for, Money Muscle's own goal-completion celebration at 100%).

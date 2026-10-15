@@ -47,10 +47,44 @@ function renderParentPanel() {
   ui.renderParentPanel(container, activeKidId());
 }
 
+// Stage 6 security hardening: onSplitCompleted/onChoreApproved are the
+// only two entry points window.SavingsQuest exposes that can cause an
+// XP write, and both accept a plain object the caller built — normally
+// that's always index.html's own real mutation-point code, but nothing
+// stops a page script (devtools console) from calling
+// window.SavingsQuest.onSplitCompleted({round: {...fabricated}}) directly
+// with a forged round/completion. These two checks close that: before
+// recording anything, cross-check the passed-in object against Money
+// Muscle's OWN stored round/chore-completion for that id and kid, and
+// reject (no-op, same as the flag being off) if it doesn't match.
+//
+// Fails OPEN (treats as real) only if the bridging function itself is
+// missing — that would mean a future Money Muscle refactor removed it,
+// not an attack, and this module's one inviolable rule is that it must
+// never be the reason real XP recording silently breaks.
+function isRealRound(round) {
+  if (!window.roundsForKid) return true;
+  const real = window.roundsForKid(round.kidId).find((r) => r.id === round.id);
+  return Boolean(real && real.save === round.save && real.give === round.give && real.spend === round.spend);
+}
+
+function isRealChoreCompletion(completion) {
+  if (!window.loadChoreCompletions) return true;
+  const real = window
+    .loadChoreCompletions()
+    .find((cc) => cc.id === completion.id && cc.kidId === completion.kidId);
+  return Boolean(real && real.price === completion.price);
+}
+
 // XP recording always runs, synchronously available from the moment this
 // script parses. UI reactions (coin burst, level-up overlay, re-render)
 // only run once `ui` exists.
 function onSplitCompleted(context) {
+  if (!isRealRound(context.round)) {
+    console.warn("Savings Quest: ignored a split-completed event that didn't match a real stored round.");
+    return null;
+  }
+
   const kidId = context.round.kidId;
   const before = store.getHero(kidId);
   const result = dataHandlers.onSplitCompleted(context);
@@ -73,6 +107,11 @@ function onSplitCompleted(context) {
 }
 
 function onChoreApproved(completion) {
+  if (!isRealChoreCompletion(completion)) {
+    console.warn("Savings Quest: ignored a chore-approved event that didn't match a real stored chore completion.");
+    return null;
+  }
+
   const result = dataHandlers.onChoreApproved(completion);
   if (ui) {
     renderKidPanel();
@@ -81,12 +120,20 @@ function onChoreApproved(completion) {
   return result;
 }
 
+// Stage 6 security hardening: getHero/getLedger/getMilestones used to
+// accept an arbitrary kidId, so any page script could read another
+// kid's hero/XP ledger/milestones just by passing a different id.
+// There's no legitimate caller that ever needed that (nothing in this
+// codebase calls these with anything but the active kid) — removing
+// the parameter entirely, rather than trying to validate it, closes
+// the gap by construction: this can now only ever answer "how's the
+// currently active kid doing."
 window.SavingsQuest = {
   isEnabled: store.isSavingsQuestEnabled,
   setEnabled: store.setSavingsQuestEnabled,
-  getHero: store.getHero,
-  getLedger: store.ledgerForKid,
-  getMilestones: store.getMilestones,
+  getHero: () => store.getHero(activeKidId()),
+  getLedger: () => store.ledgerForKid(activeKidId()),
+  getMilestones: () => store.getMilestones(activeKidId()),
   onSplitCompleted,
   onChoreApproved,
   runBackfill: runBackfillInBrowser,
@@ -95,21 +142,32 @@ window.SavingsQuest = {
   levelForTotalXp,
 };
 
+// Stage 6: a slow or offline network must not hang catalog loading
+// forever — 10s per fetch, then treat it the same as any other catalog
+// failure (UI never initializes; XP recording is already unaffected,
+// since it never depends on this promise).
 async function loadCatalog(path) {
-  const res = await fetch(path);
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(path, { signal: controller.signal });
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function initUi() {
-  const [items, skills, npcLessons, regions, puzzles, bosses] = await Promise.all([
+  const [items, skills, npcLessons, regions, puzzles, bosses, quests] = await Promise.all([
     loadCatalog("savings-quest/content/items_catalog.json"),
     loadCatalog("savings-quest/content/skills_catalog.json"),
     loadCatalog("savings-quest/content/npc_lessons.json"),
     loadCatalog("savings-quest/content/regions.json"),
     loadCatalog("savings-quest/content/puzzles.json"),
     loadCatalog("savings-quest/content/bosses.json"),
+    loadCatalog("savings-quest/content/quests.json"),
   ]);
-  ui = createUi({ store, catalogs: { items, skills, npcLessons, regions, puzzles, bosses } });
+  ui = createUi({ store, catalogs: { items, skills, npcLessons, regions, puzzles, bosses, quests } });
   ui.applyMotionPreference();
   renderKidPanel();
   renderParentPanel();

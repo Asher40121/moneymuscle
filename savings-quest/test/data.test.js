@@ -396,6 +396,83 @@ test("recordPlaySession logs minutes, and getPlayMinutesSince/getPlayMinutesToda
   assert.equal(store.getPlayMinutesSince("kid-1", "2026-10-01T00:00:00.000Z"), 15);
 });
 
+test("getWeeklySaveDollars sums only this week's net Save dollars for the given kid", () => {
+  const store = freshStore();
+  store.recordSaveEvent({
+    kidId: "kid-1",
+    amount: 3,
+    sourceEventId: "evt-1",
+    now: "2026-10-14T00:00:00.000Z", // a Wednesday
+    priorDollarSaveTotal: 0,
+    newDollarSaveTotal: 3,
+    goalTarget: null,
+  });
+  store.recordSaveEvent({
+    kidId: "kid-1",
+    amount: 4,
+    sourceEventId: "evt-2",
+    now: "2026-10-15T00:00:00.000Z", // same week
+    priorDollarSaveTotal: 3,
+    newDollarSaveTotal: 7,
+    goalTarget: null,
+  });
+  store.recordSaveEvent({
+    kidId: "kid-1",
+    amount: 100,
+    sourceEventId: "evt-3",
+    now: "2026-09-01T00:00:00.000Z", // a different week entirely
+    priorDollarSaveTotal: 7,
+    newDollarSaveTotal: 107,
+    goalTarget: null,
+  });
+  assert.equal(store.getWeeklySaveDollars("kid-1", "2026-10-16T00:00:00.000Z"), 7);
+});
+
+test("completeQuest is idempotent per period and its reward counts toward level", () => {
+  const store = freshStore();
+  const first = store.completeQuest("kid-1", "daily_checkin", "2026-10-14", 5, "2026-10-14T00:00:00.000Z");
+  assert.equal(first.written, true);
+  assert.equal(first.hero.totalXp, 5);
+
+  // Same period replayed — no double reward.
+  const replay = store.completeQuest("kid-1", "daily_checkin", "2026-10-14", 5, "2026-10-14T12:00:00.000Z");
+  assert.equal(replay.written, false);
+  assert.equal(store.getHero("kid-1").totalXp, 5);
+
+  // A new period (the next day) rewards again.
+  const nextDay = store.completeQuest("kid-1", "daily_checkin", "2026-10-15", 5, "2026-10-15T00:00:00.000Z");
+  assert.equal(nextDay.written, true);
+  assert.equal(nextDay.hero.totalXp, 10);
+});
+
+test("Stage 6 hardening: a storage that throws (quota exceeded / private browsing) degrades gracefully", () => {
+  const throwingStorage = {
+    getItem: () => {
+      throw new Error("SecurityError: localStorage is not available");
+    },
+    setItem: () => {
+      throw new Error("QuotaExceededError");
+    },
+    removeItem: () => {},
+  };
+  const store = createSavingsQuestStore(throwingStorage);
+  // Reading never throws — falls back to defaults, same as a missing key.
+  assert.doesNotThrow(() => store.getHero("kid-1"));
+  assert.equal(store.getHero("kid-1").level, 0);
+  // Writing never throws either — the change just doesn't persist.
+  assert.doesNotThrow(() =>
+    store.recordSaveEvent({
+      kidId: "kid-1",
+      amount: 10,
+      sourceEventId: "evt-1",
+      now: "2026-10-14T00:00:00.000Z",
+      priorDollarSaveTotal: 0,
+      newDollarSaveTotal: 10,
+      goalTarget: null,
+    }),
+  );
+});
+
 test("getCurrentStreakWeeks reflects only what's actually on the ledger (a pure query)", () => {
   const store = freshStore();
   assert.equal(store.getCurrentStreakWeeks("kid-1", "2026-10-14T00:00:00.000Z"), 0);

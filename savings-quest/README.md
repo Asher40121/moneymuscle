@@ -1,10 +1,13 @@
 # Savings Quest
 
 Stage 1 (data, events, XP engine), Stage 2 (hero, dashboard card, goal
-flow), Stage 3 (gear, skills, loadout), Stage 4 (Open World v1), and
-Stage 5 (Parent Experience) are all in. Everything is inert until the
-`savingsQuest` feature flag is turned on — that's a real checkbox in
-the Parent view, not just a console command.
+flow), Stage 3 (gear, skills, loadout), Stage 4 (Open World v1), Stage 5
+(Parent Experience), and Stage 6 (Content, Polish, Hardening) are all
+in — the full build. Everything is inert until the `savingsQuest`
+feature flag is turned on — that's a real checkbox in the Parent view,
+not just a console command. See `docs/savings-quest.md` for the
+architecture/tuning/rollout reference; this file stays the stage-by-
+stage build log, demo steps, and assumptions.
 
 ## How to run tests
 
@@ -14,31 +17,23 @@ npm test
 ```
 
 No dependencies to install — this uses Node's built-in test runner
-(`node --test`), not Jest/Vitest. 100 tests: Stage 1's XP math, level
-curve, streaks, idempotency, withdrawal handling, anti-farming, and
-event→XP→hero-state integration; Stage 2's pure UI-logic tests
-(next-unlock teaser, milestone path state, and a guard that fails loudly
-if a hero class ever grows a numeric stat field); Stage 3's unlock
-logic and stat calculation (`unlocks.js` — all 4 unlock condition types
-(including Stage 5's new `familyQuest` type), the requirement-text
-phrasing including the brief's own two examples verbatim, newly-unlocked
-diffing, skill-point math and prerequisite gating, and stat summation
-with an explicit cosmetic-contributes-nothing guard); Stage 4's world
-logic (`world-engine.js` — stamina-charge clamping, the daily-check-in
-date rule, landmark-path staging, both puzzle checkers, and the boss
-calm-down sequence checker), plus `data.js` writer tests for the
-stamina-charge hook on chore approval, daily check-in idempotency, and
-the four idempotent world-state writers (region discovered, chest
-opened, puzzle solved, boss defeated); and Stage 5's settings
-enforcement (`world-engine.js`'s `isWithinQuietHours` — same-day and
-midnight-wrapping windows, `dailyLimitReached`, and the composite
-`canPlayNow` gate checked in priority order: flag off, kid disabled,
-quiet hours, daily limit, stamina charge), plus `data.js`/`events.js`
-tests for the XP-rate preset actually changing XP, the parent-match
-multiplier, Bonus XP counting toward level, cheer/bonus-grant
-round-trips, play-session minute tracking, and the per-kid `enabled`
-flag no-opping `onSplitCompleted`/`onChoreApproved` exactly like the
-family-wide flag already does.
+(`node --test`), not Jest/Vitest. 113 tests across Stages 1-6: XP math,
+level curve, streaks (including Stage 6's free streak freeze), the free
+and idempotent withdrawal/anti-farming logic, event→XP→hero-state
+integration; all unlock condition types (level/streak/goalCompletion/
+milestone/familyQuest) and their requirement-text phrasing, skill-point
+math, and stat summation; world logic (stamina-charge clamping,
+daily-check-in idempotency, landmark-path staging, both puzzle
+checkers, the boss calm-down sequence checker, and the composite
+`canPlayNow` settings-enforcement gate — flag off, kid disabled, quiet
+hours, daily limit, stamina charge, each checked in that priority
+order); quest eligibility (`quests-engine.js` — daily check-in and
+weekly savings-raid checkers); and `data.js`/`events.js` writer tests
+for every idempotent world-state/settings/bonus/cheer/quest writer,
+the XP-rate preset and parent-match multiplier actually changing XP,
+the per-kid `enabled` flag no-opping events exactly like the family-wide
+flag, and Stage 6's storage-failure resilience (a throwing
+localStorage degrades instead of crashing).
 
 None of the DOM/Phaser rendering (`ui.js`, `world.js`) is unit tested —
 this project has stayed dependency-free throughout (Phaser is loaded
@@ -524,3 +519,198 @@ window.SavingsQuest.runBackfill({ kidId: '...' })  // one kid
     always-available fallback — consistent with Stage 4 but worth
     knowing if a parent wonders why Hero-Hub-only sessions don't show
     up in the weekly play-time stat.
+
+## Stage 6: Content, Polish, Hardening
+
+### Demo steps
+
+1. **New regions/bosses/NPCs**: serve the app, enable the flag, and
+   level a hero up past 10, 20, and 35 (or just read the code/
+   `content/lessons.md` if you'd rather not grind) to see Coin Canyon,
+   Frost Peaks, and Sky Kingdom unlock in turn, each with its own NPC,
+   puzzle, and boss (Sneaky Subscription at a 2-week streak, Fee
+   Phantom at level 20, Inflation Dragon at 90% of an active goal). The
+   savings-goal landmark now lives in Sky Kingdom (the new final
+   region) instead of Whispering Forest.
+2. **Daily Check-In quest**: open the World tab, do the Daily
+   Check-In (+2 ⚡), then trigger any Kid-panel re-render (switch tabs,
+   complete a split, or just reopen the World tab) — a "🏆 Quest
+   Complete! Daily Check-In: +5 XP" overlay appears. Repeat tomorrow;
+   it rewards again. Repeat today; it doesn't (idempotent per day).
+3. **Weekly Savings Raid**: do a Save split of $5+ this week. On the
+   next panel re-render, "🏆 Quest Complete! Weekly Savings Raid: +25
+   XP" appears. It won't reward again until next week.
+4. **Free streak freeze**: save in week 1 and week 2 (building a
+   2-week streak), skip week 3 entirely, then save again in week 4. The
+   streak (shown in the hero card's next-unlock math and the streak
+   multiplier applied to that week 4 save) continues as if week 3 had
+   happened, rather than resetting to a fresh 1-week streak. Skip a
+   *second* week in a row anywhere in that chain and it breaks as
+   normal — the freeze forgives one missed week, not an extended break.
+5. **Audio captions**: unmute the World HUD's sound toggle, open a
+   chest/solve a puzzle/calm a boss, and watch for a small "🔊 Chest
+   opened!"-style caption toast at the bottom of the screen alongside
+   the beep. Mute the sound and repeat — the caption still appears even
+   with no audio playing.
+6. **Security hardening** (see "Security review" below for the full
+   writeup): open the browser console and try
+   `window.SavingsQuest.onSplitCompleted({round: {id: 999999, kidId:
+   '<a real kid id>', save: 999999, give: 0, spend: 0}, priorSaveTotal:
+   0, goal: null})` — it's rejected (a console warning, no XP granted)
+   because `id: 999999` doesn't match any round Money Muscle actually
+   stored. Also try `window.SavingsQuest.getHero('some-other-kid-id')`
+   — it now always returns the *active* kid's hero regardless of what
+   id you pass, since the parameter was removed entirely.
+
+### Performance and bundle-size pass
+
+Measured directly (not estimated):
+
+- **Our own code** (every `savings-quest/*.js` + `content/*.json` +
+  `ui.css` combined): **~185 KB raw, ~48 KB gzipped.**
+- **Phaser 3** (lazy-loaded, only when "Enter the World" is clicked):
+  **~303 KB gzipped**, measured the same way as Stage 4.
+- **Combined, worst case** (a kid who opens the World on their very
+  first visit): **~351 KB gzipped** total — about 17% of the brief's
+  2 MB budget, with the ~48 KB "our own code" portion paid regardless
+  and the ~303 KB Phaser portion paid only if the canvas world is
+  actually opened.
+- **Scene weight**: unchanged from Stage 4's assessment — at most ~13
+  simple procedural-texture sprites per region, no particle effects, no
+  physics engine (movement/collision is plain per-frame math). Still no
+  physical-device benchmark was possible this session (same limitation
+  noted in every prior stage); the payload/scene-weight numbers above
+  are measured facts, the 60fps claim itself remains reasoning from the
+  code, not a device measurement.
+
+### Error handling / offline / slow-network behavior
+
+- **Catalog fetches now time out at 10s** (`AbortController`), so a
+  slow or dead network degrades the same way a 404 already did — the
+  UI simply never initializes, while XP recording (which never
+  depended on these fetches) is completely unaffected. This was the
+  one real gap found: previously a hung `fetch()` would wait forever
+  with no fallback at all.
+- **A throwing localStorage (Safari private browsing on older versions,
+  or a full quota) no longer crashes anything.** `data.js`'s `load`/
+  `save` both catch now — reads fall back to defaults, writes degrade
+  to "didn't persist this one change" with a `console.warn`, and
+  nothing propagates up to break whatever XP/game-state write was in
+  progress. Covered by a new regression test
+  (`test/data.test.js`: "a storage that throws... degrades gracefully").
+- **Phaser engine-construction failures** (any device/browser quirk
+  `type: Phaser.AUTO`'s own WebGL→Canvas fallback doesn't catch) still
+  fall back to the Hero Hub, per Stage 4's existing try/catch — re-
+  confirmed working, no change needed.
+
+### Security review
+
+Performed as a focused code-review pass (there is no backend/server to
+scan — see every prior stage's "server-authoritative means
+tamper-resistant within the client" note, which still applies).
+
+1. **Can a client award itself XP/items?** The most direct path was a
+   forged event: `window.SavingsQuest.onSplitCompleted`/
+   `onChoreApproved` (the only two public entry points that can cause
+   an XP write) used to trust whatever `round`/`completion` object was
+   passed in, with no check that it corresponded to anything Money
+   Muscle actually stored. **Fixed**: `bootstrap.js` now cross-validates
+   the round's `id`+`kidId`+amounts against `window.roundsForKid(kidId)`,
+   and the chore completion's `id`+`kidId`+`price` against
+   `window.loadChoreCompletions()`, before delegating to the real event
+   handler — a fabricated object with a novel id is rejected (logged as
+   a warning, net XP effect zero). This closes the most obvious
+   devtools-console self-grant path. It does **not** close localStorage
+   editing directly, which no client-only app can prevent — flagged
+   plainly rather than overclaimed.
+2. **Ownership validation** ("child can only touch own hero; parents
+   only their children"): every per-kid table in `data.js` is already
+   keyed/filtered by `kidId` (confirmed by walking every getter).
+   **Fixed one real gap**: `window.SavingsQuest.getHero`/`getLedger`/
+   `getMilestones` used to accept an arbitrary `kidId` argument, so any
+   script in the page could read a *different* kid's hero/XP
+   ledger/milestones just by passing a different id. These three now
+   take no argument at all and always answer for the currently active
+   kid — removing the parameter, rather than validating it, closes the
+   gap by construction. (The Parent panel itself already only ever
+   showed the currently-active kid's data — this was a `window`-surface
+   gap, not a rendering one.)
+3. **No PII leaks into logs**: audited every `console.*` call across
+   `savings-quest/*.js` and the two index.html bridge sites. All of them
+   log only a caught `Error` object or a localStorage key name — never
+   a kid name, hero name, bonus/cheer note text, or kidId. No changes
+   needed; confirmed clean.
+
+### Final Definition-of-Done checklist
+
+| Requirement | Status |
+|---|---|
+| Child can create a hero, set a goal, save via the existing flow, and see XP/level/gear/world update correctly | ✅ Verified by code trace + the full test suite (hero creation → goal flow → `recordSaveEvent` → `recomputeHeroState` → Loadout/Skills/World all read the same derived hero state) |
+| Goal completion is celebrated | ✅ Existing Money Muscle celebration (enhanced in Stage 2 with hero/level) plus the Sky Kingdom landmark arrival celebration at 100% |
+| Parents can see and limit everything | ✅ Stage 5/6: dashboard, per-child enable/disable, daily limit, quiet hours, XP-rate preset, parent match, Bonus XP, Family Quest — all in the Parent panel |
+| No XP farming | ✅ Idempotency per `(sourceEventId, track)` everywhere; anti-farming net-growth logic for withdrawals; Stage 6 closes the forged-event gap (see Security review #1) |
+| The game never moves money | ✅ Confirmed by code trace — no write path in `data.js`/`events.js`/`world.js` ever calls `window.setGoal`/any Money Muscle mutation except the one explicit, parent-approval-gated `setGoal` call when a parent approves a kid-proposed goal (Stage 2), which is the same action a parent could already take directly |
+| All tests pass | ✅ 113/113, `cd savings-quest && npm test` |
+
+### Known gaps
+
+- **No real device/browser performance benchmark** — every "fast
+  enough" claim in this project is reasoning from payload size and
+  scene weight, not a measurement on actual low/mid-range hardware. The
+  single highest-value thing to do before a real launch is to put this
+  in front of an actual budget Android tablet.
+- **No visual screenshots were captured at any stage** — same
+  limitation noted from Stage 2 onward (no browser automation tool
+  available this session). Every demo-steps section describes what
+  *should* render based on tracing the code and curl-verifying every
+  file path, not what was *seen*.
+- **A technically sophisticated kid can still edit localStorage
+  directly** to grant themselves XP/items/settings changes — no
+  client-only app can fully prevent this. Stage 6 closed the
+  "forge-an-event-via-devtools" gap specifically, which was the more
+  realistic risk (a kid finding `window.SavingsQuest` in the console),
+  but raw storage editing requires an actual backend to close
+  completely.
+- **The Quests table (`getQuests()`) was scaffolded in Stage 1 but
+  never actually used as a generic "quest catalog" accessor** — Stage 6
+  built the two real quests (`daily_checkin`, `weekly_savings_raid`)
+  directly against `content/quests.json` and `completeQuest`/
+  `getQuestProgress`, bypassing the original `getQuests()` getter
+  entirely. It's harmless dead code, not a bug, but worth knowing it's
+  there.
+- **The Daily Check-In quest reward isn't instant** — it's only granted
+  on the next full Kid-panel render after checking in (same latency
+  `evaluateAndRevealUnlocks` already has), not the literal moment the
+  Check-In button is clicked. In practice this means switching tabs or
+  completing any action fires it immediately after, but a kid who
+  checks in and then stares at the same screen won't see the reward
+  until something else triggers a re-render.
+- **Cheers are one-way and one-at-a-time** — no reply, no history
+  beyond the single most-recent unseen one being shown (older unseen
+  cheers still queue and show one by one, but there's no "cheer inbox"
+  view to browse past ones once dismissed).
+
+### Recommended v2 ideas
+
+- A real **quest catalog system** generalizing today's two hardcoded
+  quests (daily/weekly) into a data-driven list with more variety
+  (e.g. "visit 2 regions this week," "talk to every NPC once") — the
+  scaffolding (`getQuests`, `content/quests.json`'s shape) already
+  points this direction.
+- **Push-style reminders** (a home-screen notification, if this ever
+  becomes an installable PWA) for the Daily Check-In quest and quiet-
+  hours-ending, instead of relying on the kid opening the app to see
+  either.
+- **A "cheer inbox"** so a kid can browse all past parent cheers, not
+  just dismiss the latest.
+- **Server-authoritative XP for real**, if this project ever gets an
+  actual backend — every "tamper-resistant within the client" caveat
+  in this README would become unnecessary, and the forged-event
+  validation added in Stage 6 would become genuinely impossible to
+  bypass rather than just harder to bypass.
+- **An actual device lab performance pass** before wide rollout — real
+  fps numbers on a $150 Android tablet and a 3-year-old iPhone, not
+  reasoning from bundle size.
+- **A second landmark-path visual treatment** for kids with multiple
+  concurrent goals (today's model assumes one active goal per kid,
+  matching Money Muscle's own single-goal-at-a-time design).

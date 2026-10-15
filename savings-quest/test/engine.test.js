@@ -4,6 +4,7 @@ import {
   xpToReachLevel,
   levelForTotalXp,
   computeStreakWeeks,
+  computeStreakWeeksWithFreeze,
   streakMultiplier,
   computeNetSaveGrowth,
   computeSaveXp,
@@ -58,6 +59,58 @@ test("computeStreakWeeks: breaks on the first missing week", () => {
   const weekKeys = new Set(["2026-10-12", "2026-10-05", "2026-09-21"]); // gap at 09-28
   const ordered = ["2026-10-12", "2026-10-05", "2026-09-28", "2026-09-21"];
   assert.equal(computeStreakWeeks(weekKeys, ordered), 2);
+});
+
+test("computeStreakWeeksWithFreeze: a single gap week is absorbed, streak keeps going", () => {
+  const weekKeys = new Set(["2026-10-12", "2026-10-05", "2026-09-21", "2026-09-14"]); // gap at 09-28
+  const ordered = ["2026-10-12", "2026-10-05", "2026-09-28", "2026-09-21", "2026-09-14"];
+  const result = computeStreakWeeksWithFreeze(weekKeys, ordered, 1);
+  // All 4 real weeks PLUS the frozen gap week itself still count toward
+  // the chain — that's the whole point: the gap doesn't reset anything.
+  assert.equal(result.streak, 5);
+  assert.equal(result.freezesUsed, 1);
+});
+
+test("computeStreakWeeksWithFreeze: a second, separate gap still breaks it once the one free freeze is spent", () => {
+  // W0 active, W1 gap (frozen — W2 is active, so it's worth bridging),
+  // W2 active, W3 gap (W4 is active too, but the freeze is already
+  // spent, so this is where the chain actually breaks).
+  const weekKeys = new Set(["2026-10-12", "2026-09-28", "2026-09-14", "2026-09-07"]);
+  const ordered = [
+    "2026-10-12",
+    "2026-10-05",
+    "2026-09-28",
+    "2026-09-21",
+    "2026-09-14",
+    "2026-09-07",
+  ];
+  const result = computeStreakWeeksWithFreeze(weekKeys, ordered, 1);
+  assert.equal(result.streak, 3); // W0 + frozen W1 + W2
+  assert.equal(result.freezesUsed, 1);
+});
+
+test("computeStreakWeeksWithFreeze: a freeze is never spent on a gap that leads into no further history", () => {
+  // A single save this week only — the "week before" isn't a missed
+  // week, it's simply before this saver had any history at all.
+  const weekKeys = new Set(["2026-10-12"]);
+  const ordered = ["2026-10-12", "2026-10-05", "2026-09-28"];
+  const result = computeStreakWeeksWithFreeze(weekKeys, ordered, 1);
+  assert.equal(result.streak, 1);
+  assert.equal(result.freezesUsed, 0);
+});
+
+test("computeStreakWeeksWithFreeze: with 0 freezes available, behaves exactly like the plain version", () => {
+  const weekKeys = new Set(["2026-10-12", "2026-10-05", "2026-09-21"]);
+  const ordered = ["2026-10-12", "2026-10-05", "2026-09-28", "2026-09-21"];
+  const plain = computeStreakWeeks(weekKeys, ordered);
+  const withZeroFreezes = computeStreakWeeksWithFreeze(weekKeys, ordered, 0);
+  assert.equal(withZeroFreezes.streak, plain);
+  assert.equal(withZeroFreezes.freezesUsed, 0);
+});
+
+test("computeStreakWeeksWithFreeze: zero recent activity still never fabricates a streak", () => {
+  const result = computeStreakWeeksWithFreeze(new Set(), ["2026-10-12", "2026-10-05"], 1);
+  assert.deepEqual(result, { streak: 0, freezesUsed: 0 });
 });
 
 test("streakMultiplier: no bonus for a single week, grows from the 2nd week, then caps", () => {

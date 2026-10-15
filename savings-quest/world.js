@@ -49,10 +49,23 @@ function canvasSupported() {
 
 // ---------------------------------------------------------------------
 // Sound: short synthesized beeps, not audio files. Muted entirely when
-// the family's "muted" setting is on.
+// the family's "muted" setting is on. Stage 6: every beep also gets a
+// visual caption — shown even when muted, so a deaf/hard-of-hearing
+// kid gets the same information sound would have carried, not just a
+// generic "something happened."
 // ---------------------------------------------------------------------
+function showSoundCaption(text) {
+  const toast = document.createElement("div");
+  toast.className = "sq-sound-caption";
+  toast.setAttribute("role", "status");
+  toast.textContent = `🔊 ${text}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 1600);
+}
+
 let audioCtx = null;
-function playBeep(freq, durationMs, muted) {
+function playBeep(freq, durationMs, muted, caption) {
+  if (caption) showSoundCaption(caption);
   if (muted) return;
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
@@ -670,7 +683,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       onOpenChest: (chestDef, sprite) => {
         const result = store.openChest(kidId, chestDef.id, new Date().toISOString());
         if (result.written) {
-          playBeep(880, 180, isMuted());
+          playBeep(880, 180, isMuted(), "Chest opened!");
           sceneInstance.markChestOpened(chestDef);
         }
       },
@@ -678,13 +691,13 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       onOpenPuzzle: (puzzleDefArg) =>
         showPuzzleModal(puzzleDefArg, () => {
           store.solvePuzzle(kidId, puzzleDefArg.id, new Date().toISOString());
-          playBeep(1046, 220, isMuted());
+          playBeep(1046, 220, isMuted(), "Puzzle solved!");
           sceneInstance.markPuzzleSolved();
         }),
       onOpenBoss: (bossDefArg) =>
         showBossModal(bossDefArg, () => {
           store.defeatBoss(kidId, bossDefArg.id, new Date().toISOString());
-          playBeep(660, 300, isMuted());
+          playBeep(660, 300, isMuted(), "Boss calmed!");
           sceneInstance.markBossDefeated();
         }),
       onLandmark: () => {
@@ -859,7 +872,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
           if (store.getWorldState(kidId).puzzlesSolved.some((e) => e.id === puzzleDef.id)) return;
           showPuzzleModal(puzzleDef, () => {
             store.solvePuzzle(kidId, puzzleDef.id);
-            playBeep(1046, 220, isMuted());
+            playBeep(1046, 220, isMuted(), "Puzzle solved!");
             renderHeroHub(container, kidId);
           });
         }),
@@ -868,7 +881,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
         b.addEventListener("click", () => {
           const chestId = b.dataset.chestId;
           const result = store.openChest(kidId, chestId);
-          if (result.written) playBeep(880, 180, isMuted());
+          if (result.written) playBeep(880, 180, isMuted(), "Chest opened!");
           renderHeroHub(container, kidId);
         }),
       );
@@ -877,7 +890,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
           if (store.getWorldState(kidId).bossesDefeated.some((e) => e.id === bossDef.id)) return;
           showBossModal(bossDef, () => {
             store.defeatBoss(kidId, bossDef.id);
-            playBeep(660, 300, isMuted());
+            playBeep(660, 300, isMuted(), "Boss calmed!");
             renderHeroHub(container, kidId);
           });
         }),

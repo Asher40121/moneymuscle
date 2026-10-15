@@ -609,6 +609,23 @@
   margin-top: 8px;
 }
 
+/* ---------- Stage 6: audio captions ---------- */
+
+.sq-sound-caption {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  background: rgba(31, 36, 38, 0.88);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 999px;
+  z-index: 1400;
+  pointer-events: none;
+}
+
 /* ---------- Stage 5: Parent Experience ---------- */
 
 .sq-banner-card {

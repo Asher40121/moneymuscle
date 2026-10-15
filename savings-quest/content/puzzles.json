@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "_note": "One simple puzzle per Stage 4 region, each tied to that region's money lesson. Checked by pure functions in world-engine.js (checkCoinOrderPuzzle, checkNeedsWantsSort) so the logic is unit-tested without any DOM.",
+  "version": 2,
+  "_note": "One simple puzzle per region, five total as of Stage 6, each tied to that region's money lesson. Reuses the same two puzzle types throughout (coin_order, needs_wants_sort) with new content rather than adding new puzzle UI code. Checked by pure functions in world-engine.js (checkCoinOrderPuzzle, checkNeedsWantsSort) so the logic is unit-tested without any DOM.",
   "puzzles": [
     {
       "id": "coin_order_meadow",
@@ -20,6 +20,32 @@
         { "id": "lunch", "label": "School lunch", "answer": "need" },
         { "id": "candy", "label": "Candy", "answer": "want" }
       ]
+    },
+    {
+      "id": "coin_order_canyon",
+      "region": "coin_canyon",
+      "type": "coin_order",
+      "prompt": "Tap these budget amounts from smallest to biggest.",
+      "values": [2, 15, 25, 50]
+    },
+    {
+      "id": "needs_wants_frost",
+      "region": "frost_peaks",
+      "type": "needs_wants_sort",
+      "prompt": "Sort each surprise expense into Need or Want.",
+      "items": [
+        { "id": "tire", "label": "A popped bike tire", "answer": "need" },
+        { "id": "toy", "label": "A toy you saw at a friend's house", "answer": "want" },
+        { "id": "shoes", "label": "Shoes that no longer fit", "answer": "need" },
+        { "id": "sticker", "label": "A pack of stickers", "answer": "want" }
+      ]
+    },
+    {
+      "id": "coin_order_sky",
+      "region": "sky_kingdom",
+      "type": "coin_order",
+      "prompt": "Tap these savings milestones from smallest to biggest.",
+      "values": [10, 40, 75, 100]
     }
   ]
 }

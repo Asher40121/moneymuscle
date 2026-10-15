@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "_note": "Stage 4 vertical slice: two regions. 'unlock' is shaped exactly like an item's unlock in items_catalog.json on purpose, so unlocks.js's isItemUnlocked() can check a region/boss with zero new code. 'hasLandmark' marks which region shows the kid's real savings goal as a world landmark (reaching 100% there triggers the arrival celebration).",
+  "version": 3,
+  "_note": "Stage 6: five regions total. 'unlock' is shaped exactly like an item's unlock in items_catalog.json on purpose, so unlocks.js's isItemUnlocked() can check a region/boss with zero new code. 'hasLandmark' marks which region shows the kid's real savings goal as a world landmark (reaching 100% there triggers the arrival celebration) — moved from Whispering Forest (Stage 4's 2-region slice) to Sky Kingdom now that it's the final, most-distant region.",
   "regions": [
     {
       "id": "meadow",
@@ -27,7 +27,7 @@
       "npcId": "sage_willow",
       "puzzleId": "needs_wants_forest",
       "bossId": "impulse_imp",
-      "hasLandmark": true,
+      "hasLandmark": false,
       "bgColor": "#2f6b4f",
       "creatures": [
         { "id": "forest_blob_1", "kind": "blob", "x": 300, "y": 180 },
@@ -37,6 +37,61 @@
       "chests": [
         { "id": "forest_chest_1", "x": 90, "y": 300 },
         { "id": "forest_chest_2", "x": 700, "y": 440 }
+      ]
+    },
+    {
+      "id": "coin_canyon",
+      "name": "Coin Canyon",
+      "unlock": { "type": "level", "value": 10 },
+      "npcId": "canyon_keeper_cole",
+      "puzzleId": "coin_order_canyon",
+      "bossId": "sneaky_subscription",
+      "hasLandmark": false,
+      "bgColor": "#d9a86c",
+      "creatures": [
+        { "id": "canyon_blob_1", "kind": "blob", "x": 240, "y": 260 },
+        { "id": "canyon_blob_2", "kind": "blob", "x": 480, "y": 380 },
+        { "id": "canyon_blob_3", "kind": "blob", "x": 620, "y": 180 }
+      ],
+      "chests": [
+        { "id": "canyon_chest_1", "x": 100, "y": 200 },
+        { "id": "canyon_chest_2", "x": 720, "y": 420 }
+      ]
+    },
+    {
+      "id": "frost_peaks",
+      "name": "Frost Peaks",
+      "unlock": { "type": "level", "value": 20 },
+      "npcId": "elder_frost",
+      "puzzleId": "needs_wants_frost",
+      "bossId": "fee_phantom",
+      "hasLandmark": false,
+      "bgColor": "#cfe8ef",
+      "creatures": [
+        { "id": "frost_blob_1", "kind": "blob", "x": 280, "y": 200 },
+        { "id": "frost_blob_2", "kind": "blob", "x": 540, "y": 340 }
+      ],
+      "chests": [
+        { "id": "frost_chest_1", "x": 110, "y": 400 },
+        { "id": "frost_chest_2", "x": 690, "y": 160 }
+      ]
+    },
+    {
+      "id": "sky_kingdom",
+      "name": "Sky Kingdom",
+      "unlock": { "type": "level", "value": 35 },
+      "npcId": "skyward_sage_luna",
+      "puzzleId": "coin_order_sky",
+      "bossId": "inflation_dragon",
+      "hasLandmark": true,
+      "bgColor": "#a9c9f5",
+      "creatures": [
+        { "id": "sky_blob_1", "kind": "blob", "x": 320, "y": 220 },
+        { "id": "sky_blob_2", "kind": "blob", "x": 560, "y": 280 }
+      ],
+      "chests": [
+        { "id": "sky_chest_1", "x": 130, "y": 180 },
+        { "id": "sky_chest_2", "x": 650, "y": 420 }
       ]
     }
   ]

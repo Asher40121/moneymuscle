@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "_note": "One non-violent Money Monster for this slice, tied to a goal milestone. 'unlock' is shaped exactly like an item's unlock so unlocks.js's isItemUnlocked() handles the gating with no new code. The encounter is a calm-down memory sequence, not combat — winning means the Imp learns patience, not that it's defeated violently.",
+  "version": 2,
+  "_note": "One non-violent Money Monster per boss region, four total as of Stage 6, each tied to a goal/streak/level milestone. 'unlock' is shaped exactly like an item's unlock so unlocks.js's isItemUnlocked() handles the gating with no new code. The encounter is always the same calm-down memory sequence (breathe/count/wait/smile, reused and reordered/lengthened per boss for variety and difficulty) — never combat. Winning means the monster learns patience, not that it's defeated violently.",
   "bosses": [
     {
       "id": "impulse_imp",
@@ -10,6 +10,33 @@
       "flavor": "The Impulse Imp zips around whispering \"buy it now, buy it now!\" Help it slow down by showing it how to calm down.",
       "winFlavor": "The Impulse Imp takes a deep breath... and smiles. \"Maybe I don't need it right now,\" it says.",
       "sequence": ["breathe", "count", "wait", "smile"]
+    },
+    {
+      "id": "sneaky_subscription",
+      "name": "Sneaky Subscription",
+      "region": "coin_canyon",
+      "unlock": { "type": "streak", "value": 2 },
+      "flavor": "The Sneaky Subscription keeps quietly renewing itself, hoping nobody notices. Help it learn to ask first.",
+      "winFlavor": "The Sneaky Subscription blushes. \"You're right — I should always ask before I renew,\" it admits.",
+      "sequence": ["wait", "count", "breathe", "smile"]
+    },
+    {
+      "id": "fee_phantom",
+      "name": "Fee Phantom",
+      "region": "frost_peaks",
+      "unlock": { "type": "level", "value": 20 },
+      "flavor": "The Fee Phantom nibbles tiny bits off every jar it can find, one sneaky fee at a time.",
+      "winFlavor": "The Fee Phantom floats away quietly. \"I'll let your rainy-day fund rest in peace,\" it sighs.",
+      "sequence": ["breathe", "wait", "count", "wait", "smile"]
+    },
+    {
+      "id": "inflation_dragon",
+      "name": "Inflation Dragon",
+      "region": "sky_kingdom",
+      "unlock": { "type": "milestone", "value": 0.9 },
+      "flavor": "The Inflation Dragon makes everything cost a little more every year, just by breathing on it. The closer you get to your goal, the louder it roars.",
+      "winFlavor": "The Inflation Dragon curls up and purrs. \"A patient saver always outlasts me,\" it rumbles.",
+      "sequence": ["breathe", "count", "wait", "breathe", "count", "smile"]
     }
   ]
 }

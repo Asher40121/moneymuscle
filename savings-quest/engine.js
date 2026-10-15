@@ -74,6 +74,59 @@ export function computeStreakWeeks(weekKeysWithSave, orderedWeekKeysDescending) 
   return streak;
 }
 
+// Stage 6: a FREE streak freeze — missing one week in the middle of an
+// otherwise-active streak doesn't reset it to zero. Always available,
+// never purchased, never a limited/scarce resource (rule #5 forbids
+// loss-pressure mechanics, and a depletable "streak insurance" you have
+// to earn or buy would just be loss-pressure with extra steps). A
+// brand-new saver with zero recent activity still gets 0 — the freeze
+// protects an existing streak, it doesn't fabricate one.
+//
+// Separate function, not a modification of computeStreakWeeks above,
+// so every existing caller/test of the plain version is untouched;
+// data.js opts into the freeze-aware version explicitly where it wants
+// this more forgiving behavior.
+export function computeStreakWeeksWithFreeze(weekKeysWithSave, orderedWeekKeysDescending, freezesAvailable = 1) {
+  if (orderedWeekKeysDescending.length === 0) return { streak: 0, freezesUsed: 0 };
+
+  let idx = 0;
+  if (!weekKeysWithSave.has(orderedWeekKeysDescending[0])) {
+    idx = 1;
+    if (
+      orderedWeekKeysDescending.length < 2 ||
+      !weekKeysWithSave.has(orderedWeekKeysDescending[1])
+    ) {
+      return { streak: 0, freezesUsed: 0 };
+    }
+  }
+
+  let streak = 0;
+  let freezesUsed = 0;
+  for (; idx < orderedWeekKeysDescending.length; idx++) {
+    if (weekKeysWithSave.has(orderedWeekKeysDescending[idx])) {
+      streak++;
+      continue;
+    }
+    // A gap only gets frozen if there's real activity immediately
+    // behind it (further back in time) to actually continue the chain
+    // toward — otherwise this "gap" is just where the saver's history
+    // ends, and spending a freeze on it would fabricate streak length
+    // out of weeks that were never part of any streak at all. This is
+    // why a brand-new saver's very first week still correctly reports
+    // streak=1, not 2: the week before their first save isn't a
+    // "missed" week, it's simply before they existed as a saver.
+    const nextWeekIsActive =
+      idx + 1 < orderedWeekKeysDescending.length && weekKeysWithSave.has(orderedWeekKeysDescending[idx + 1]);
+    if (nextWeekIsActive && freezesUsed < freezesAvailable) {
+      freezesUsed++;
+      streak++; // the frozen week still counts — the chain isn't broken
+    } else {
+      break;
+    }
+  }
+  return { streak, freezesUsed };
+}
+
 // streakWeeks counts the current week too (see computeStreakWeeks), so a
 // brand-new saver's very first week is streakWeeks=1 — that's one data
 // point, not a streak, so it earns no bonus. The multiplier only grows
