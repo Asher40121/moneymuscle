@@ -189,3 +189,44 @@ test("anti-farming: a save shortly after a withdrawal of the same amount nets ~0
   // No new Level XP from "shuffling" the same $20 back in.
   assert.equal(hero.totalXp, xpAfterFirstSave);
 });
+
+test("getHero backfills new fields onto a record saved before they existed", () => {
+  const storage = createMemoryStorage();
+  // Simulate a Stage-2-era hero record with no `loadout` field at all,
+  // written directly (bypassing createHero/defaultHero, as an old stored
+  // blob genuinely would be).
+  storage.setItem(
+    "mm_sq_hero",
+    JSON.stringify({
+      _v: 1,
+      data: { "kid-1": { level: 3, totalXp: 264, name: "Zara", heroClass: "ranger" } },
+    }),
+  );
+  const store = createSavingsQuestStore(storage);
+  const hero = store.getHero("kid-1");
+
+  assert.equal(hero.name, "Zara"); // real stored value preserved
+  assert.equal(hero.level, 3);
+  assert.deepEqual(hero.loadout, { weapon: null, armor: null, companion: null, cosmetic: null });
+});
+
+test("getCurrentStreakWeeks reflects only what's actually on the ledger (a pure query)", () => {
+  const store = freshStore();
+  assert.equal(store.getCurrentStreakWeeks("kid-1", "2026-10-14T00:00:00.000Z"), 0);
+
+  store.recordSaveEvent({
+    kidId: "kid-1",
+    amount: 10,
+    sourceEventId: "evt-1",
+    now: "2026-10-14T00:00:00.000Z",
+    priorDollarSaveTotal: 0,
+    newDollarSaveTotal: 10,
+    goalTarget: null,
+  });
+
+  // Querying "right now" (same moment as the save) sees that week active.
+  assert.equal(store.getCurrentStreakWeeks("kid-1", "2026-10-14T00:00:00.000Z"), 1);
+  // Querying a week that never had any activity shows 0 — unlike
+  // recordSaveEvent's internal calc, this never assumes "now" counts.
+  assert.equal(store.getCurrentStreakWeeks("kid-1", "2026-11-01T00:00:00.000Z"), 0);
+});

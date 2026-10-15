@@ -1,12 +1,17 @@
 {
-  "version": 1,
-  "_note": "Placeholder shape for Stage 1. The real skill tree is built in Stage 3. Edit this file to add/change skills — no code changes needed.",
+  "version": 2,
+  "_note": "Three branches: Saver (power), Giver (heart), Wise Spender (wisdom — the only source of Wisdom; gear never grants it). Skills change in-game stats only, never real money. One skill point is earned per hero level.",
   "skills": [
-    {
-      "id": "steady_saver",
-      "name": "Steady Saver",
-      "unlocksAtLevel": 3,
-      "description": "Unlocks at Level 3."
-    }
+    { "id": "steady_saver", "branch": "saver", "name": "Steady Saver", "tier": 1, "requires": null, "cost": 1, "description": "Saving a little, often, beats saving a lot, rarely.", "stats": { "power": 2 } },
+    { "id": "rainy_day_ready", "branch": "saver", "name": "Rainy Day Ready", "tier": 2, "requires": "steady_saver", "cost": 1, "description": "Being prepared is its own kind of strength.", "stats": { "power": 3 } },
+    { "id": "compound_thinker", "branch": "saver", "name": "Compound Thinker", "tier": 3, "requires": "rainy_day_ready", "cost": 1, "description": "Patience turns small savings into big ones.", "stats": { "power": 5 } },
+
+    { "id": "open_hands", "branch": "giver", "name": "Open Hands", "tier": 1, "requires": null, "cost": 1, "description": "Giving doesn't have to wait until you have 'enough'.", "stats": { "heart": 2 } },
+    { "id": "generous_habit", "branch": "giver", "name": "Generous Habit", "tier": 2, "requires": "open_hands", "cost": 1, "description": "Giving regularly builds a generous heart.", "stats": { "heart": 3 } },
+    { "id": "legacy_giver", "branch": "giver", "name": "Legacy Giver", "tier": 3, "requires": "generous_habit", "cost": 1, "description": "What you give can outlast you.", "stats": { "heart": 5 } },
+
+    { "id": "pause_button", "branch": "wise_spender", "name": "Pause Button", "tier": 1, "requires": null, "cost": 1, "description": "A pause before spending is a planning superpower.", "stats": { "wisdom": 2 } },
+    { "id": "needs_first", "branch": "wise_spender", "name": "Needs First", "tier": 2, "requires": "pause_button", "cost": 1, "description": "Needs before wants keeps plans on track.", "stats": { "wisdom": 3 } },
+    { "id": "plan_ahead", "branch": "wise_spender", "name": "Plan Ahead", "tier": 3, "requires": "needs_first", "cost": 1, "description": "The best spending decisions are made before you're at the register.", "stats": { "wisdom": 5 } }
   ]
 }

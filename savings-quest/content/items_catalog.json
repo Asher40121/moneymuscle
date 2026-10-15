@@ -1,20 +1,41 @@
 {
-  "version": 1,
-  "_note": "Placeholder shape for Stage 1. Real weapons/gear are built in Stage 3. Edit this file to add/change items — no code changes needed.",
+  "version": 2,
+  "_note": "32 items across weapon/armor/companion/cosmetic, Common->Legendary. 'stats' are in-game only (power/heart/wisdom) and never affect real money. Cosmetics always have empty stats on purpose — looks never confer advantage.",
   "items": [
-    {
-      "id": "starter_sword",
-      "name": "Training Sword",
-      "type": "weapon",
-      "unlocksAtLevel": 1,
-      "description": "Every hero starts here."
-    },
-    {
-      "id": "copper_shield",
-      "name": "Copper Shield",
-      "type": "gear",
-      "unlocksAtLevel": 5,
-      "description": "Unlocks at Level 5."
-    }
+    { "id": "training_sword", "name": "Training Sword", "category": "weapon", "rarity": "common", "tooltip": "Every saver starts somewhere — small deposits add up.", "unlock": { "type": "level", "value": 1 }, "stats": { "power": 1 } },
+    { "id": "piggy_bank_mace", "name": "Piggy Bank Mace", "category": "weapon", "rarity": "common", "tooltip": "A simple start: the first dollar saved is the hardest.", "unlock": { "type": "level", "value": 3 }, "stats": { "power": 2 } },
+    { "id": "budget_bow", "name": "Budget Bow", "category": "weapon", "rarity": "uncommon", "tooltip": "Aim carefully — a budget tells your money where to go.", "unlock": { "type": "level", "value": 5 }, "stats": { "power": 3 } },
+    { "id": "compound_interest_crossbow", "name": "Compound-Interest Crossbow", "category": "weapon", "rarity": "rare", "tooltip": "Your savings grow while you sleep.", "unlock": { "type": "level", "value": 10 }, "stats": { "power": 5 } },
+    { "id": "emergency_fund_shieldbreaker", "name": "Emergency Fund Shield-Breaker", "category": "weapon", "rarity": "rare", "tooltip": "A safety net breaks through almost any surprise expense.", "unlock": { "type": "milestone", "value": 0.5 }, "stats": { "power": 6 } },
+    { "id": "patience_pike", "name": "Patience Pike", "category": "weapon", "rarity": "epic", "tooltip": "The longer you wait to spend, the stronger this gets.", "unlock": { "type": "streak", "value": 4 }, "stats": { "power": 8 } },
+    { "id": "diversified_dagger_set", "name": "Diversified Dagger Set", "category": "weapon", "rarity": "epic", "tooltip": "Don't put all your savings in one place.", "unlock": { "type": "level", "value": 25 }, "stats": { "power": 9 } },
+    { "id": "legacy_longsword", "name": "Legacy Longsword", "category": "weapon", "rarity": "legendary", "tooltip": "What you save today can help someone tomorrow.", "unlock": { "type": "goalCompletion", "value": 3 }, "stats": { "power": 12 } },
+
+    { "id": "coin_pocket_cap", "name": "Coin-Pocket Cap", "category": "armor", "rarity": "common", "tooltip": "Keep your savings close and easy to track.", "unlock": { "type": "level", "value": 1 }, "stats": { "power": 1 } },
+    { "id": "thrifty_tunic", "name": "Thrifty Tunic", "category": "armor", "rarity": "common", "tooltip": "Spending less than you earn is the whole game.", "unlock": { "type": "level", "value": 4 }, "stats": { "power": 2 } },
+    { "id": "rainy_day_raincoat", "name": "Rainy-Day Raincoat", "category": "armor", "rarity": "uncommon", "tooltip": "A little saved now covers a lot of surprise later.", "unlock": { "type": "milestone", "value": 0.25 }, "stats": { "power": 3 } },
+    { "id": "budget_breastplate", "name": "Budget Breastplate", "category": "armor", "rarity": "uncommon", "tooltip": "A budget protects your goals from impulse spending.", "unlock": { "type": "level", "value": 8 }, "stats": { "power": 4 } },
+    { "id": "interest_armor", "name": "Interest Armor", "category": "armor", "rarity": "rare", "tooltip": "The bank pays YOU for letting your money sit and grow.", "unlock": { "type": "level", "value": 15 }, "stats": { "power": 6 } },
+    { "id": "needs_vs_wants_visor", "name": "Needs-vs-Wants Visor", "category": "armor", "rarity": "rare", "tooltip": "Seeing clearly is the first step to spending wisely.", "unlock": { "type": "streak", "value": 2 }, "stats": { "power": 6 } },
+    { "id": "debtfree_greaves", "name": "Debt-Free Greaves", "category": "armor", "rarity": "epic", "tooltip": "Lighter steps when you owe nobody anything.", "unlock": { "type": "goalCompletion", "value": 2 }, "stats": { "power": 9 } },
+    { "id": "golden_nestegg_plate", "name": "Golden Nest-Egg Plate", "category": "armor", "rarity": "legendary", "tooltip": "A well-protected nest egg can weather any storm.", "unlock": { "type": "level", "value": 40 }, "stats": { "power": 13 } },
+
+    { "id": "sparechange_sparrow", "name": "Spare-Change Sparrow", "category": "companion", "rarity": "common", "tooltip": "Even small, spare change adds up when you keep it.", "unlock": { "type": "level", "value": 2 }, "stats": { "heart": 1 } },
+    { "id": "lemonadestand_pup", "name": "Lemonade-Stand Pup", "category": "companion", "rarity": "common", "tooltip": "Every big saver started with a small side hustle.", "unlock": { "type": "level", "value": 6 }, "stats": { "heart": 2 } },
+    { "id": "thankyou_turtle", "name": "Thank-You Turtle", "category": "companion", "rarity": "uncommon", "tooltip": "Saying thank you for what you give is part of giving.", "unlock": { "type": "milestone", "value": 0.25 }, "stats": { "heart": 3 } },
+    { "id": "givingjar_glowbug", "name": "Giving-Jar Glowbug", "category": "companion", "rarity": "uncommon", "tooltip": "A giving jar makes generosity a habit, not an accident.", "unlock": { "type": "level", "value": 12 }, "stats": { "heart": 4 } },
+    { "id": "tithe_tiger", "name": "Tithe Tiger", "category": "companion", "rarity": "rare", "tooltip": "Giving regularly, even a little, builds a generous heart.", "unlock": { "type": "streak", "value": 3 }, "stats": { "heart": 6 } },
+    { "id": "communitychest_crab", "name": "Community-Chest Crab", "category": "companion", "rarity": "rare", "tooltip": "Some goals are easier to reach together.", "unlock": { "type": "goalCompletion", "value": 1 }, "stats": { "heart": 6 } },
+    { "id": "legacy_lion", "name": "Legacy Lion", "category": "companion", "rarity": "epic", "tooltip": "What you give today can outlast you.", "unlock": { "type": "level", "value": 30 }, "stats": { "heart": 9 } },
+    { "id": "golden_giving_griffin", "name": "Golden Giving Griffin", "category": "companion", "rarity": "legendary", "tooltip": "Reaching a goal is even sweeter when you share it.", "unlock": { "type": "milestone", "value": 1.0 }, "stats": { "heart": 13 } },
+
+    { "id": "lucky_penny_cape", "name": "Lucky Penny Cape", "category": "cosmetic", "rarity": "common", "tooltip": "Luck helps, but habits help more.", "unlock": { "type": "level", "value": 1 }, "stats": {} },
+    { "id": "checkered_budget_bandana", "name": "Checkered Budget Bandana", "category": "cosmetic", "rarity": "common", "tooltip": "Tracking every dollar is its own kind of style.", "unlock": { "type": "level", "value": 5 }, "stats": {} },
+    { "id": "piggypink_dye_pack", "name": "Piggy-Pink Dye Pack", "category": "cosmetic", "rarity": "uncommon", "tooltip": "However you save, make it yours.", "unlock": { "type": "level", "value": 10 }, "stats": {} },
+    { "id": "streakflame_trail", "name": "Streak-Flame Trail", "category": "cosmetic", "rarity": "uncommon", "tooltip": "Consistency looks good on you.", "unlock": { "type": "streak", "value": 5 }, "stats": {} },
+    { "id": "milestone_medal_set", "name": "Milestone Medal Set", "category": "cosmetic", "rarity": "rare", "tooltip": "Wear your progress — you earned it.", "unlock": { "type": "milestone", "value": 0.75 }, "stats": {} },
+    { "id": "goalgetter_crown", "name": "Goal-Getter Crown", "category": "cosmetic", "rarity": "rare", "tooltip": "A crown for every goal you finish.", "unlock": { "type": "goalCompletion", "value": 1 }, "stats": {} },
+    { "id": "starlight_saver_aura", "name": "Starlight Saver Aura", "category": "cosmetic", "rarity": "epic", "tooltip": "Some savers just shine a little brighter.", "unlock": { "type": "level", "value": 35 }, "stats": {} },
+    { "id": "legendary_nestegg_halo", "name": "Legendary Nest-Egg Halo", "category": "cosmetic", "rarity": "legendary", "tooltip": "The mark of a saver who went all the way.", "unlock": { "type": "level", "value": 50 }, "stats": {} }
   ]
 }

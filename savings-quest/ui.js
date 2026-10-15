@@ -17,6 +17,14 @@ import {
   computeMilestonePathState,
 } from "./ui-data.js";
 import { levelForTotalXp } from "./engine.js";
+import {
+  isItemUnlocked,
+  describeUnlockRequirement,
+  computeNewlyUnlockedItems,
+  getAvailableSkillPoints,
+  canLearnSkill,
+  computeHeroStats,
+} from "./unlocks.js";
 
 function escapeHtml(str) {
   if (window.escapeHtml) return window.escapeHtml(str);
@@ -40,6 +48,37 @@ function avatarSvg(lookId, hex) {
       <path d="M22 40 Q32 48 42 40" stroke="#1f2426" stroke-width="3" fill="none" stroke-linecap="round"/>
     </svg>
   `;
+}
+
+// Procedurally generated, not individually hand-illustrated — "original
+// art" here means a consistent, never-copied visual language (shape by
+// category, color by rarity), not 32 bespoke drawings. See README.
+const RARITY_COLORS = {
+  common: "#8e999e",
+  uncommon: "#1fa34a",
+  rare: "#1467e0",
+  epic: "#7c3aed",
+  legendary: "#faab19",
+};
+
+const RARITY_LABELS = {
+  common: "Common",
+  uncommon: "Uncommon",
+  rare: "Rare",
+  epic: "Epic",
+  legendary: "Legendary",
+};
+
+function itemIconSvg(category, rarity) {
+  const color = RARITY_COLORS[rarity] || RARITY_COLORS.common;
+  const shapes = {
+    weapon: `<polygon points="32,4 40,24 60,30 40,36 32,60 24,36 4,30 24,24" fill="${color}"/>`,
+    armor: `<path d="M32 6 L54 16 V32 C54 48 44 58 32 60 C20 58 10 48 10 32 V16 Z" fill="${color}"/>`,
+    companion: `<circle cx="32" cy="36" r="22" fill="${color}"/><circle cx="22" cy="30" r="4" fill="#1f2426"/><circle cx="42" cy="30" r="4" fill="#1f2426"/>`,
+    cosmetic: `<polygon points="32,2 38,24 60,24 42,38 48,60 32,46 16,60 22,38 4,24 26,24" fill="${color}"/>`,
+  };
+  const body = shapes[category] || shapes.weapon;
+  return `<svg viewBox="0 0 64 64" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
 }
 
 function applyMotionPreference(store) {
@@ -297,6 +336,228 @@ export function createUi({ store, catalogs }) {
     });
   }
 
+  // Assembles the plain-data context unlocks.js needs, bridging Stage 1's
+  // store with Money Muscle's own globals (goal, real save total,
+  // completed-goal count) — the only place in this file that does so for
+  // gear/skill purposes.
+  function buildHeroContext(kidId) {
+    const hero = store.getHero(kidId);
+    const goal = window.getGoal ? window.getGoal(kidId) : null;
+    const saveTotal =
+      window.computeTotals && window.roundsForKid
+        ? window.computeTotals(window.roundsForKid(kidId)).save
+        : 0;
+    const completedGoalsCount = window.getCompletedGoalsFor
+      ? window.getCompletedGoalsFor(kidId).length
+      : 0;
+    const streakWeeks = store.getCurrentStreakWeeks(kidId, new Date().toISOString());
+
+    return {
+      level: hero.level,
+      streakWeeks,
+      completedGoalsCount,
+      goalTarget: goal ? goal.target : null,
+      currentSaveTotal: saveTotal,
+    };
+  }
+
+  // Checks the whole catalog against current progress, grants anything
+  // newly eligible, and queues the reveal overlay for each one. Called
+  // after every XP-affecting event (see bootstrap.js) and once on panel
+  // render so refreshing the page can't skip a reveal.
+  function evaluateAndRevealUnlocks(kidId) {
+    const heroContext = buildHeroContext(kidId);
+    const ownedItemIds = store.getHeroInventory(kidId).map((i) => i.itemId);
+    const newly = computeNewlyUnlockedItems({
+      itemsCatalog: catalogs.items,
+      heroContext,
+      ownedItemIds,
+    });
+    if (newly.length === 0) return;
+
+    const now = new Date().toISOString();
+    for (const item of newly) {
+      store.grantItem(kidId, item.id, now);
+    }
+    queueUnlockReveal(kidId, newly);
+  }
+
+  let revealQueue = [];
+  let revealKidId = null;
+
+  function queueUnlockReveal(kidId, items) {
+    revealKidId = kidId;
+    revealQueue.push(...items);
+    if (revealQueue.length === items.length) showNextUnlockReveal();
+  }
+
+  function showNextUnlockReveal() {
+    const item = revealQueue.shift();
+    if (!item) return;
+
+    const overlay = document.createElement("div");
+    overlay.className = "sq-levelup-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-label", `New item unlocked: ${item.name}`);
+    overlay.innerHTML = `
+      <div class="sq-levelup-card">
+        <div class="sq-reveal-icon">${itemIconSvg(item.category, item.rarity)}</div>
+        <div class="sq-reveal-rarity" style="color:${RARITY_COLORS[item.rarity]}">${RARITY_LABELS[item.rarity]}</div>
+        <h2>${escapeHtml(item.name)}</h2>
+        <p>${escapeHtml(item.tooltip)}</p>
+        <button type="button" class="sq-levelup-done-btn">Neat!</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const doneBtn = overlay.querySelector("button");
+    doneBtn.addEventListener("click", () => {
+      overlay.remove();
+      if (revealKidId) store.markItemSeen(revealKidId, item.id);
+      showNextUnlockReveal();
+    });
+    doneBtn.focus();
+  }
+
+  function renderLoadoutScreen(container, kidId) {
+    const hero = store.getHero(kidId);
+    const heroContext = buildHeroContext(kidId);
+    const owned = store.getHeroInventory(kidId);
+    const ownedIds = new Set(owned.map((i) => i.itemId));
+    const learnedSkillIds = store.getLearnedSkillIds(kidId);
+    const stats = computeHeroStats({
+      loadout: hero.loadout,
+      itemsCatalog: catalogs.items,
+      learnedSkillIds,
+      skillsCatalog: catalogs.skills,
+    });
+
+    const slots = ["weapon", "armor", "companion", "cosmetic"];
+    const slotLabels = { weapon: "Weapon", armor: "Armor", companion: "Companion", cosmetic: "Cosmetic" };
+
+    function slotSection(slot) {
+      const itemsInSlot = catalogs.items.items.filter((i) => i.category === slot);
+      const equippedId = hero.loadout[slot];
+
+      return `
+        <div class="sq-loadout-slot">
+          <div class="sq-loadout-slot-label">${slotLabels[slot]}</div>
+          <div class="sq-item-grid">
+            ${itemsInSlot
+              .map((item) => {
+                const owns = ownedIds.has(item.id);
+                const equipped = equippedId === item.id;
+                if (!owns) {
+                  const req = describeUnlockRequirement(item, heroContext);
+                  return `
+                    <div class="sq-item-card sq-item-locked" title="${escapeHtml(item.name)}">
+                      <div class="sq-item-icon">${itemIconSvg(item.category, item.rarity)}</div>
+                      <div class="sq-item-name">🔒 ${escapeHtml(item.name)}</div>
+                      <div class="sq-item-req">${escapeHtml(req)}</div>
+                    </div>
+                  `;
+                }
+                return `
+                  <button type="button" class="sq-item-card sq-item-owned ${equipped ? "sq-item-equipped" : ""}"
+                    data-slot="${slot}" data-item-id="${item.id}" aria-pressed="${equipped}">
+                    <div class="sq-item-icon">${itemIconSvg(item.category, item.rarity)}</div>
+                    <div class="sq-item-name">${escapeHtml(item.name)}</div>
+                    <div class="sq-item-rarity" style="color:${RARITY_COLORS[item.rarity]}">${RARITY_LABELS[item.rarity]}</div>
+                    ${equipped ? '<div class="sq-item-equipped-tag">Equipped</div>' : ""}
+                  </button>
+                `;
+              })
+              .join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="sq-card">
+        <h2>🎒 Loadout</h2>
+        <div class="sq-stats-row">
+          <div class="sq-stat"><span class="sq-stat-label">Power</span><span class="sq-stat-value">${stats.power}</span></div>
+          <div class="sq-stat"><span class="sq-stat-label">Heart</span><span class="sq-stat-value">${stats.heart}</span></div>
+          <div class="sq-stat"><span class="sq-stat-label">Wisdom</span><span class="sq-stat-value">${stats.wisdom}</span></div>
+        </div>
+        ${slots.map(slotSection).join("")}
+      </div>
+    `;
+
+    container.querySelectorAll(".sq-item-owned").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        store.equipItem(kidId, btn.dataset.slot, btn.dataset.itemId);
+        renderLoadoutScreen(container, kidId);
+      });
+    });
+  }
+
+  function renderSkillTree(container, kidId) {
+    const hero = store.getHero(kidId);
+    const learnedSkillIds = store.getLearnedSkillIds(kidId);
+    const availablePoints = getAvailableSkillPoints({
+      heroLevel: hero.level,
+      learnedSkillIds,
+      skillsCatalog: catalogs.skills,
+    });
+
+    const branches = [
+      { id: "saver", label: "Saver", stat: "Power" },
+      { id: "giver", label: "Giver", stat: "Heart" },
+      { id: "wise_spender", label: "Wise Spender", stat: "Wisdom" },
+    ];
+
+    function branchColumn(branch) {
+      const skills = catalogs.skills.skills
+        .filter((s) => s.branch === branch.id)
+        .sort((a, b) => a.tier - b.tier);
+
+      return `
+        <div class="sq-skill-branch">
+          <div class="sq-skill-branch-label">${branch.label}<span class="sq-class-flavor">${branch.stat}</span></div>
+          ${skills
+            .map((skill) => {
+              const learned = learnedSkillIds.includes(skill.id);
+              const check = learned
+                ? { ok: false, reason: "already-learned" }
+                : canLearnSkill({ skill, learnedSkillIds, heroLevel: hero.level, skillsCatalog: catalogs.skills });
+              return `
+                <div class="sq-skill-node ${learned ? "sq-skill-learned" : ""}">
+                  <div class="sq-skill-name">${escapeHtml(skill.name)}</div>
+                  <div class="sq-skill-desc">${escapeHtml(skill.description)}</div>
+                  ${
+                    learned
+                      ? '<div class="sq-skill-status">✓ Learned</div>'
+                      : `<button type="button" class="sq-skill-learn-btn" data-skill-id="${skill.id}" ${check.ok ? "" : "disabled"}>
+                          ${check.ok ? "Learn (1 pt)" : check.reason === "prerequisite-missing" ? "Locked" : "Need more points"}
+                        </button>`
+                  }
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="sq-card">
+        <h2>🌳 Skills</h2>
+        <div class="sq-xp-label">${availablePoints} skill point${availablePoints === 1 ? "" : "s"} available</div>
+        <div class="sq-skill-tree">
+          ${branches.map(branchColumn).join("")}
+        </div>
+      </div>
+    `;
+
+    container.querySelectorAll(".sq-skill-learn-btn:not([disabled])").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        store.addLearnedSkill(kidId, btn.dataset.skillId, new Date().toISOString());
+        renderSkillTree(container, kidId);
+      });
+    });
+  }
+
   function renderKidPanel(container, kidId) {
     applyMotionPreference(store);
 
@@ -317,11 +578,42 @@ export function createUi({ store, catalogs }) {
       return;
     }
 
+    evaluateAndRevealUnlocks(kidId);
+
     const hero = store.getHero(kidId);
     container.className = `sq-panel ${densityClass(hero)}`;
-    container.innerHTML = '<div id="sqHeroCardMount"></div><div id="sqGoalFlowMount"></div>';
+    container.innerHTML = `
+      <div id="sqHeroCardMount"></div>
+      <div id="sqGoalFlowMount"></div>
+      <div class="sq-tab-row">
+        <button type="button" class="sq-tab-btn" data-tab="loadout" aria-expanded="false">🎒 Loadout</button>
+        <button type="button" class="sq-tab-btn" data-tab="skills" aria-expanded="false">🌳 Skills</button>
+      </div>
+      <div id="sqTabMount"></div>
+    `;
     renderHeroCard(container.querySelector("#sqHeroCardMount"), kidId);
     renderGoalFlow(container.querySelector("#sqGoalFlowMount"), kidId);
+
+    const tabMount = container.querySelector("#sqTabMount");
+    let openTab = null;
+
+    container.querySelectorAll(".sq-tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
+        if (openTab === tab) {
+          openTab = null;
+          tabMount.innerHTML = "";
+          container.querySelectorAll(".sq-tab-btn").forEach((b) => b.setAttribute("aria-expanded", "false"));
+          return;
+        }
+        openTab = tab;
+        container.querySelectorAll(".sq-tab-btn").forEach((b) =>
+          b.setAttribute("aria-expanded", String(b.dataset.tab === tab)),
+        );
+        if (tab === "loadout") renderLoadoutScreen(tabMount, kidId);
+        if (tab === "skills") renderSkillTree(tabMount, kidId);
+      });
+    });
   }
 
   function renderParentPanel(container, kidId) {
@@ -426,6 +718,7 @@ export function createUi({ store, catalogs }) {
     renderParentPanel,
     showCoinBurst,
     showLevelUpOverlay,
+    evaluateAndRevealUnlocks,
     applyMotionPreference: () => applyMotionPreference(store),
   };
 }

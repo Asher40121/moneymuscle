@@ -1,9 +1,9 @@
 # Savings Quest
 
-Stage 1 (data, events, XP engine) and Stage 2 (hero, dashboard card, goal
-flow) are both in. Everything is inert until the `savingsQuest` feature
-flag is turned on — as of Stage 2, that's a real checkbox in the Parent
-view, not just a console command.
+Stage 1 (data, events, XP engine), Stage 2 (hero, dashboard card, goal
+flow), and Stage 3 (gear, skills, loadout) are all in. Everything is
+inert until the `savingsQuest` feature flag is turned on — that's a real
+checkbox in the Parent view, not just a console command.
 
 ## How to run tests
 
@@ -13,16 +13,21 @@ npm test
 ```
 
 No dependencies to install — this uses Node's built-in test runner
-(`node --test`), not Jest/Vitest. 41 tests: Stage 1's XP math, level
+(`node --test`), not Jest/Vitest. 58 tests: Stage 1's XP math, level
 curve, streaks, idempotency, withdrawal handling, anti-farming, and
-event→XP→hero-state integration, plus Stage 2's pure UI-logic tests
+event→XP→hero-state integration; Stage 2's pure UI-logic tests
 (next-unlock teaser, milestone path state, and a guard that fails loudly
-if a hero class ever grows a numeric stat field).
+if a hero class ever grows a numeric stat field); and Stage 3's unlock
+logic and stat calculation (`unlocks.js` — all 4 unlock condition types,
+the requirement-text phrasing including the brief's own two examples
+verbatim, newly-unlocked diffing, skill-point math and prerequisite
+gating, and stat summation with an explicit cosmetic-contributes-nothing
+guard).
 
-Stage 2's actual DOM rendering (`ui.js`) is **not** unit tested — this
-project has stayed dependency-free throughout, and testing rendered HTML
-honestly needs jsdom or similar. See "Demo steps" below for manual
-verification instead.
+None of the DOM rendering (`ui.js`) is unit tested — this project has
+stayed dependency-free throughout, and testing rendered HTML honestly
+needs jsdom or similar. See "Demo steps" below for manual verification
+instead.
 
 ## How to try it in the browser
 
@@ -72,7 +77,83 @@ automation tool available) — everything above is written from tracing
 the code and confirming every file path resolves (`curl`'d all of them
 against a local server, all 200s) and all tests pass, but hasn't been
 visually confirmed in a live browser on my end. Worth you doing an actual
-click-through before treating Stage 2 as done.
+click-through before treating any stage as done.
+
+## Stage 3 demo steps: Gear, Skills, Loadout
+
+1. Serve the app, enable the flag, and get a hero to at least Level 1
+   (follow steps 1-8 above) if you haven't already.
+2. In the **Kid** view, below the goal flow you'll now see two new
+   buttons: **🎒 Loadout** and **🌳 Skills**.
+3. The moment the hero reaches a new level/streak/milestone/goal, a
+   full-screen reveal plays automatically (same overlay style as the
+   level-up screen) showing the newly unlocked item's icon, rarity, name,
+   and one-line money-lesson tooltip. This runs every time the Kid panel
+   re-renders (after a split, a chore payment, or just reopening the
+   page), so it can't be missed even if you weren't looking at the time.
+4. Click **🎒 Loadout**. You'll see three stat totals (Power / Heart /
+   Wisdom) at the top, then four slot rows (Weapon, Armor, Companion,
+   Cosmetic). Owned items are clickable cards — click one to equip it
+   into that slot (only one per slot) and watch the stat totals update.
+   Locked items show a 🔒, the item's name, and its exact requirement
+   text (e.g. "Unlocks at Level 7" or "Save $20 more"), grayed out.
+5. Click **🌳 Skills**. You'll see three branch columns — Saver (Power),
+   Giver (Heart), Wise Spender (Wisdom, game-only) — each with 3 skills
+   in a prerequisite chain. The header shows available skill points
+   (1 per hero level, minus points already spent). Click **Learn (1 pt)**
+   on an eligible skill; it becomes "✓ Learned" and feeds into the
+   Loadout screen's stat totals. A skill whose prerequisite isn't learned
+   yet shows "Locked"; one you can't afford yet shows "Need more points."
+6. To see higher-rarity items and more of the skill tree, keep saving
+   (to level up and hit milestones), building a weekly save streak, or
+   completing a savings goal — each is a real, independent unlock path.
+
+## Stage 3 assumptions (flagged for review)
+
+13. **"Inventory persistence via the server" is implemented as
+    localStorage, not an actual backend** — this app has never had a
+    server (confirmed in Stage 0: "default to local storage"), and
+    nothing in Stage 3 introduced one. Gear/skill ownership lives in the
+    same `hero_inventory`/`hero_skills` localStorage tables as everything
+    else in this app, consistent with items #6 above. Flagging this
+    explicitly again since the Stage 3 brief's wording ("via the server")
+    directly implied otherwise.
+14. **"Original art" is procedural, not 32 hand-illustrated pieces.**
+    Each item's icon is generated from its `category` (a shape — star
+    burst for weapons, shield for armor, round face for companions,
+    sparkle for cosmetics) and its `rarity` (a fill color, paired with a
+    text label so it's never color-only — see assumption #16). This is
+    original art in the sense that it was never copied or borrowed from
+    anywhere, but it's not 32 bespoke illustrations. Upgrading to real
+    per-item art later only requires swapping what `itemIconSvg()`
+    returns — every call site already treats it as a black box.
+15. **Stat model: Power/Heart/Wisdom map onto gear category + skill
+    branch.** Weapons and armor grant Power, companions grant Heart,
+    cosmetics grant nothing (purely a look, so no cosmetic is ever
+    strictly better than another — same "no pay-to-win" spirit as the
+    rest of the game). Wisdom is deliberately **skill-only** — no gear
+    grants it — so the 4 gear categories and 3 skill branches both map
+    cleanly onto exactly 3 stats without an awkward leftover category.
+16. **Colorblind-safety is handled via text, not color alone.** Every
+    place a rarity renders, it shows the word ("Common", "Uncommon",
+    "Rare", "Epic", "Legendary") alongside its color — the color is a
+    reinforcing cue, never the only signal.
+17. **Loadout is single-equip-per-slot, stored directly on the hero
+    record** (`hero.loadout = { weapon, armor, companion, cosmetic }`),
+    not a separate inventory-state table — simplest model that satisfies
+    "equip gear, companion, cosmetics; show stats," and consistent with
+    how `hero` already holds the rest of the hero's live state.
+18. **Unlock evaluation runs on every Kid-panel render** (via
+    `evaluateAndRevealUnlocks`, called at the top of `renderKidPanel`),
+    not only right after an XP-granting event. This guarantees a reveal
+    is never silently skipped (e.g. if a level-up happens while the Kid
+    panel isn't mounted), at the cost of a small, cheap catalog scan on
+    every render — 32 items, pure in-memory comparisons, no measurable
+    cost.
+19. **Multiple simultaneous unlocks queue and reveal one at a time**, each
+    waiting for "Neat!" before the next appears, rather than showing them
+    all at once — easier to read, and mirrors how the existing level-up
+    overlay already works (one overlay, acknowledged, then gone).
 
 ## How to tune
 

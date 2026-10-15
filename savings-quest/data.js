@@ -61,6 +61,8 @@ function defaultHero() {
     palette: null,
     heroClass: null,
     densityMode: null, // 'young' (6-9) | 'older' (10-14)
+    // Set in Stage 3 — one equipped item per slot, or null.
+    loadout: { weapon: null, armor: null, companion: null, cosmetic: null },
   };
 }
 
@@ -137,9 +139,13 @@ export function createSavingsQuestStore(storage) {
 
   // --- hero ---
 
+  // Backfills any fields a stored record predates (e.g. a hero created
+  // in Stage 2, before Stage 3 added `loadout`) onto the default shape,
+  // so older saved data never crashes on a missing field as the schema
+  // grows. Real stored values always win over the defaults.
   function getHero(kidId) {
     const all = load(KEYS.hero, {});
-    return all[kidId] ? all[kidId] : defaultHero();
+    return all[kidId] ? { ...defaultHero(), ...all[kidId] } : defaultHero();
   }
 
   function saveHero(kidId, hero) {
@@ -170,16 +176,70 @@ export function createSavingsQuestStore(storage) {
     return hero;
   }
 
-  // --- hero_inventory / hero_skills — scaffolded now, populated in later stages ---
+  // --- hero_inventory: items the kid owns. Each entry's `seen` flag
+  // drives the Stage 3 unlock-reveal animation — false until the reveal
+  // has actually played, so a page refresh doesn't replay it. ---
 
   function getHeroInventory(kidId) {
     const all = load(KEYS.heroInventory, {});
     return all[kidId] || [];
   }
 
+  // Writer is deliberately "dumb" — it trusts the caller already checked
+  // isItemUnlocked (in unlocks.js). Idempotent: granting an already-owned
+  // item is a no-op, consistent with every other writer in this file.
+  function grantItem(kidId, itemId, grantedAt) {
+    const all = load(KEYS.heroInventory, {});
+    const list = all[kidId] || [];
+    if (list.some((i) => i.itemId === itemId)) return { written: false };
+    list.push({ itemId, acquiredAt: grantedAt, seen: false });
+    all[kidId] = list;
+    save(KEYS.heroInventory, all);
+    return { written: true };
+  }
+
+  function markItemSeen(kidId, itemId) {
+    const all = load(KEYS.heroInventory, {});
+    const list = all[kidId] || [];
+    const entry = list.find((i) => i.itemId === itemId);
+    if (entry) {
+      entry.seen = true;
+      all[kidId] = list;
+      save(KEYS.heroInventory, all);
+    }
+  }
+
+  // Equips an owned item into its matching slot (weapon/armor/companion/
+  // cosmetic). Also "dumb" by design — ownership and category matching
+  // are checked by the caller.
+  function equipItem(kidId, slot, itemId) {
+    const hero = getHero(kidId);
+    hero.loadout = { ...hero.loadout, [slot]: itemId };
+    saveHero(kidId, hero);
+    return hero;
+  }
+
+  // --- hero_skills: skills the kid has learned. ---
+
   function getHeroSkills(kidId) {
     const all = load(KEYS.heroSkills, {});
     return all[kidId] || [];
+  }
+
+  function getLearnedSkillIds(kidId) {
+    return getHeroSkills(kidId).map((s) => s.skillId);
+  }
+
+  // Writer is "dumb" the same way — canLearnSkill (prerequisites, points
+  // available) is checked by the caller before this is called.
+  function addLearnedSkill(kidId, skillId, learnedAt) {
+    const all = load(KEYS.heroSkills, {});
+    const list = all[kidId] || [];
+    if (list.some((s) => s.skillId === skillId)) return { written: false };
+    list.push({ skillId, unlockedAt: learnedAt });
+    all[kidId] = list;
+    save(KEYS.heroSkills, all);
+    return { written: true };
   }
 
   // --- xp_ledger (event-sourced, idempotent per sourceEventId + track) ---
@@ -221,6 +281,23 @@ export function createSavingsQuestStore(storage) {
 
   function ledgerForKid(kidId) {
     return getXpLedger().filter((e) => e.kidId === kidId);
+  }
+
+  // Read-only streak query, for display (e.g. "2 more weeks to unlock
+  // this"). Deliberately a separate, small duplication of the week-key
+  // gathering logic inside recordSaveEvent below, rather than a shared
+  // helper — recordSaveEvent's version also seeds "now" into the set
+  // before computing XP for an event that hasn't been written yet, which
+  // this query must NOT do (it should only ever reflect what's actually
+  // on the ledger). Refactoring them together risked changing Stage 1's
+  // already-tested XP behavior for a cosmetic win; not worth it.
+  function getCurrentStreakWeeks(kidId, now) {
+    const weekKeys = new Set(
+      ledgerForKid(kidId)
+        .filter((e) => e.track === "save")
+        .map((e) => startOfWeekKey(e.createdAt)),
+    );
+    return computeStreakWeeks(weekKeys, descendingWeekKeys(now));
   }
 
   // --- pending withdrawals (anti-farming support table) ---
@@ -492,10 +569,16 @@ export function createSavingsQuestStore(storage) {
     isHeroCreated,
     createHero,
     getHeroInventory,
+    grantItem,
+    markItemSeen,
+    equipItem,
     getHeroSkills,
+    getLearnedSkillIds,
+    addLearnedSkill,
     getXpLedger,
     hasLedgerEntry,
     ledgerForKid,
+    getCurrentStreakWeeks,
     getPendingWithdrawals,
     getMilestones,
     getGoalProposal,
