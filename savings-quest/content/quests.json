@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_note": "Stage 6: two always-on quests, evaluated and rewarded by quests-engine.js's pure checkers plus data.js's completeQuest (idempotent per period — 'daily' resets each calendar day, 'weekly' resets each Monday-start week, same week boundary the rest of this module already uses). rewardXp counts toward level via the 'quest' ledger track, the same way Stage 5's manual Bonus XP does via 'bonus'.",
+  "_note": "Three always-on quests, evaluated and rewarded by quests-engine.js's pure checkers plus data.js's completeQuest (idempotent per period — 'daily' resets each calendar day, 'weekly' resets each Monday-start week, same week boundary the rest of this module already uses). rewardXp counts toward level via the 'quest' ledger track, the same way Stage 5's manual Bonus XP does via 'bonus'. weekly_savings_raid and weekly_giving_quest deliberately mirror each other so saving and giving are reinforced equally often.",
   "quests": [
     {
       "id": "daily_checkin",
@@ -14,6 +14,14 @@
       "name": "Weekly Savings Raid",
       "type": "weekly",
       "description": "Save at least $5 this week to complete the raid!",
+      "targetAmount": 5,
+      "rewardXp": 25
+    },
+    {
+      "id": "weekly_giving_quest",
+      "name": "Weekly Giving Quest",
+      "type": "weekly",
+      "description": "Give at least $5 this week to complete the quest!",
       "targetAmount": 5,
       "rewardXp": 25
     }

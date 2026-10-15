@@ -27,7 +27,7 @@ import {
 } from "./unlocks.js";
 import { createWorld } from "./world.js";
 import { CONFIG } from "./config.js";
-import { isDailyCheckinQuestComplete, isWeeklySavingsRaidComplete } from "./quests-engine.js";
+import { isDailyCheckinQuestComplete, isWeeklyTargetMet } from "./quests-engine.js";
 
 function escapeHtml(str) {
   if (window.escapeHtml) return window.escapeHtml(str);
@@ -88,6 +88,16 @@ function itemIconSvg(category, rarity) {
   return `<svg viewBox="0 0 64 64" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
 }
 
+// Every item/skill carries its own distinct emoji (see content/*.json),
+// shown in a rarity-tinted circle — a unique, appropriate icon per
+// item instead of the generic category shape above (itemIconSvg stays
+// only as a fallback for a hypothetical item added without one).
+function itemBadge(item) {
+  const color = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
+  const icon = item.icon || "❓";
+  return `<div class="sq-item-icon" style="background:${color}22;border-color:${color};" aria-hidden="true">${icon}</div>`;
+}
+
 function applyMotionPreference(store) {
   const reduced = Boolean(store.getGameSettings().family.reducedMotion);
   document.documentElement.setAttribute("data-sq-motion", reduced ? "off" : "on");
@@ -99,6 +109,24 @@ function densityClass(hero) {
 
 export function createUi({ store, catalogs }) {
   const world = createWorld({ store, catalogs, buildHeroContext });
+
+  // Collapsed-by-default state for the Parent panel's cards, persisted
+  // here (outside renderParentPanel) so it survives the panel's
+  // frequent full-innerHTML re-renders — otherwise every re-render
+  // (e.g. after granting Bonus XP) would snap every card shut again.
+  const parentCardOpen = { main: false, progress: false, settings: false, bonus: false };
+
+  function wireParentCardToggle(container, key, toggleId, bodyId, chevronId) {
+    const toggle = container.querySelector(`#${toggleId}`);
+    if (!toggle) return;
+    toggle.addEventListener("click", () => {
+      const isOpen = !parentCardOpen[key];
+      parentCardOpen[key] = isOpen;
+      container.querySelector(`#${bodyId}`).style.display = isOpen ? "block" : "none";
+      container.querySelector(`#${chevronId}`).classList.toggle("open", isOpen);
+      toggle.setAttribute("aria-expanded", String(isOpen));
+    });
+  }
 
   function renderHeroCreator(container, kidId, { onCreated }) {
     let selected = {
@@ -349,30 +377,20 @@ export function createUi({ store, catalogs }) {
     return window.computeTotals && window.roundsForKid ? window.computeTotals(window.roundsForKid(kidId)).save : 0;
   }
 
-  // Dollars saved toward the kid's CURRENT goal specifically — resets
-  // to $0 when a completed goal is cleared and a new one is set,
-  // unlike kidSaveTotal's lifetime running total (which Family Quest
-  // deliberately keeps using below, since that's not tied to any one
-  // goal). Falls back to the lifetime total if the bridging function
-  // isn't available for some reason, same defensive pattern as every
-  // other window.* call in this file.
-  function kidGoalProgress(kidId) {
-    return window.getGoalProgress ? window.getGoalProgress(kidId) : kidSaveTotal(kidId);
+  // Lifetime real Give dollars — the Giving Garden's progress number.
+  // Unlike Save, giving has no per-kid "goal" to reset against, so
+  // this is just the running total, same as kidSaveTotal.
+  function kidGiveTotal(kidId) {
+    return window.computeTotals && window.roundsForKid ? window.computeTotals(window.roundsForKid(kidId)).give : 0;
   }
 
-  // Stage 5: Family Quest progress is the same number for every kid in
-  // the family (sum of everyone's real Save total), so it's computed
-  // once here and folded into every kid's heroContext — unlocks.js then
-  // handles it with the exact same milestone-style math an individual
-  // goal already uses, via the "familyQuest" unlock type.
-  function buildFamilyQuestContext() {
-    const settings = store.getGameSettings();
-    const kids = window.loadKids ? window.loadKids() : [];
-    const progress = kids.reduce((sum, kid) => sum + kidSaveTotal(kid.id), 0);
-    return {
-      familyQuestProgress: progress,
-      familyQuestTarget: settings.family.familyQuestTarget || CONFIG.FAMILY_QUEST_DEFAULT_TARGET,
-    };
+  // Dollars saved toward the kid's CURRENT goal specifically — resets
+  // to $0 when a completed goal is cleared and a new one is set,
+  // unlike kidSaveTotal's lifetime running total. Falls back to the
+  // lifetime total if the bridging function isn't available for some
+  // reason, same defensive pattern as every other window.* call here.
+  function kidGoalProgress(kidId) {
+    return window.getGoalProgress ? window.getGoalProgress(kidId) : kidSaveTotal(kidId);
   }
 
   // Assembles the plain-data context unlocks.js needs, bridging Stage 1's
@@ -393,7 +411,7 @@ export function createUi({ store, catalogs }) {
       completedGoalsCount,
       goalTarget: goal ? goal.target : null,
       currentSaveTotal: kidGoalProgress(kidId),
-      ...buildFamilyQuestContext(),
+      lifetimeGiveTotal: kidGiveTotal(kidId),
     };
   }
 
@@ -418,9 +436,9 @@ export function createUi({ store, catalogs }) {
     queueUnlockReveal(kidId, newly);
   }
 
-  // Stage 6: the Daily Check-In and Weekly Savings Raid quests.
+  // Daily Check-In, Weekly Savings Raid, and Weekly Giving Quest.
   // Evaluated on every Kid-panel render (same cadence as
-  // evaluateAndRevealUnlocks) — checking in or hitting the weekly
+  // evaluateAndRevealUnlocks) — checking in or hitting a weekly
   // target doesn't reward instantly mid-action, but the very next
   // panel render (the next split, chore, or just reopening the World
   // tab) always catches up, and completeQuest's idempotency means
@@ -437,12 +455,21 @@ export function createUi({ store, catalogs }) {
       if (result.written) completed.push(dailyQuest);
     }
 
-    const weeklyQuest = catalogs.quests.quests.find((q) => q.id === "weekly_savings_raid");
-    if (weeklyQuest) {
+    const weeklySaveQuest = catalogs.quests.quests.find((q) => q.id === "weekly_savings_raid");
+    if (weeklySaveQuest) {
       const weeklyDollars = store.getWeeklySaveDollars(kidId, now);
-      if (isWeeklySavingsRaidComplete(weeklyDollars, weeklyQuest.targetAmount)) {
-        const result = store.completeQuest(kidId, weeklyQuest.id, store.getWeekKey(now), weeklyQuest.rewardXp, now);
-        if (result.written) completed.push(weeklyQuest);
+      if (isWeeklyTargetMet(weeklyDollars, weeklySaveQuest.targetAmount)) {
+        const result = store.completeQuest(kidId, weeklySaveQuest.id, store.getWeekKey(now), weeklySaveQuest.rewardXp, now);
+        if (result.written) completed.push(weeklySaveQuest);
+      }
+    }
+
+    const weeklyGiveQuest = catalogs.quests.quests.find((q) => q.id === "weekly_giving_quest");
+    if (weeklyGiveQuest) {
+      const weeklyGiveDollars = store.getWeeklyGiveDollars(kidId, now);
+      if (isWeeklyTargetMet(weeklyGiveDollars, weeklyGiveQuest.targetAmount)) {
+        const result = store.completeQuest(kidId, weeklyGiveQuest.id, store.getWeekKey(now), weeklyGiveQuest.rewardXp, now);
+        if (result.written) completed.push(weeklyGiveQuest);
       }
     }
 
@@ -487,7 +514,7 @@ export function createUi({ store, catalogs }) {
     overlay.setAttribute("aria-label", `New item unlocked: ${item.name}`);
     overlay.innerHTML = `
       <div class="sq-levelup-card">
-        <div class="sq-reveal-icon">${itemIconSvg(item.category, item.rarity)}</div>
+        <div class="sq-reveal-icon">${itemBadge(item)}</div>
         <div class="sq-reveal-rarity" style="color:${RARITY_COLORS[item.rarity]}">${RARITY_LABELS[item.rarity]}</div>
         <h2>${escapeHtml(item.name)}</h2>
         <p>${escapeHtml(item.tooltip)}</p>
@@ -536,7 +563,7 @@ export function createUi({ store, catalogs }) {
                   const req = describeUnlockRequirement(item, heroContext);
                   return `
                     <div class="sq-item-card sq-item-locked" title="${escapeHtml(item.name)}">
-                      <div class="sq-item-icon">${itemIconSvg(item.category, item.rarity)}</div>
+                      ${itemBadge(item)}
                       <div class="sq-item-name">🔒 ${escapeHtml(item.name)}</div>
                       <div class="sq-item-req">${escapeHtml(req)}</div>
                     </div>
@@ -545,7 +572,7 @@ export function createUi({ store, catalogs }) {
                 return `
                   <button type="button" class="sq-item-card sq-item-owned ${equipped ? "sq-item-equipped" : ""}"
                     data-slot="${slot}" data-item-id="${item.id}" aria-pressed="${equipped}">
-                    <div class="sq-item-icon">${itemIconSvg(item.category, item.rarity)}</div>
+                    ${itemBadge(item)}
                     <div class="sq-item-name">${escapeHtml(item.name)}</div>
                     <div class="sq-item-rarity" style="color:${RARITY_COLORS[item.rarity]}">${RARITY_LABELS[item.rarity]}</div>
                     ${equipped ? '<div class="sq-item-equipped-tag">Equipped</div>' : ""}
@@ -609,7 +636,7 @@ export function createUi({ store, catalogs }) {
                 : canLearnSkill({ skill, learnedSkillIds, heroLevel: hero.level, skillsCatalog: catalogs.skills });
               return `
                 <div class="sq-skill-node ${learned ? "sq-skill-learned" : ""}">
-                  <div class="sq-skill-name">${escapeHtml(skill.name)}</div>
+                  <div class="sq-skill-name"><span class="sq-skill-icon" aria-hidden="true">${skill.icon || "⭐"}</span>${escapeHtml(skill.name)}</div>
                   <div class="sq-skill-desc">${escapeHtml(skill.description)}</div>
                   ${
                     learned
@@ -644,46 +671,34 @@ export function createUi({ store, catalogs }) {
     });
   }
 
-  // Stage 5: unseen Bonus XP grants and parent cheers, shown once each,
-  // dismissible. Both are small, read-only notices — dismissing one
-  // only marks it seen, it never affects XP or anything else.
+  // Stage 5: unseen Bonus XP grants, shown once each, dismissible. A
+  // small, read-only notice — dismissing one only marks it seen, it
+  // never affects XP or anything else. (Family Quest's parent-cheer
+  // messages were removed for now, along with the rest of that
+  // feature — see store.sendCheer/getCheers/markCheerSeen, still
+  // intact in data.js but no longer reachable from any UI.)
   function renderMessageBanners(container, kidId) {
     const unseenBonuses = store.getBonusGrants(kidId).filter((g) => !g.seen);
-    const unseenCheers = store.getCheers(kidId).filter((c) => !c.seen);
-    if (unseenBonuses.length === 0 && unseenCheers.length === 0) {
+    if (unseenBonuses.length === 0) {
       container.innerHTML = "";
       return;
     }
 
-    container.innerHTML = `
-      ${unseenBonuses
-        .map(
-          (g) => `
-        <div class="sq-card sq-banner-card" data-kind="bonus" data-id="${g.id}">
-          <strong>✨ Bonus XP from a grown-up: +${g.amount} XP</strong>
-          <p>${escapeHtml(g.note)}</p>
-          <button type="button" class="sq-decline-btn sq-banner-dismiss">Thanks!</button>
-        </div>
-      `,
-        )
-        .join("")}
-      ${unseenCheers
-        .map(
-          (c) => `
-        <div class="sq-card sq-banner-card" data-kind="cheer" data-id="${c.id}">
-          <strong>💌 A cheer from a grown-up:</strong>
-          <p>${escapeHtml(c.message)}</p>
-          <button type="button" class="sq-decline-btn sq-banner-dismiss">Thanks!</button>
-        </div>
-      `,
-        )
-        .join("")}
-    `;
+    container.innerHTML = unseenBonuses
+      .map(
+        (g) => `
+      <div class="sq-card sq-banner-card" data-id="${g.id}">
+        <strong>✨ Bonus XP from a grown-up: +${g.amount} XP</strong>
+        <p>${escapeHtml(g.note)}</p>
+        <button type="button" class="sq-decline-btn sq-banner-dismiss">Thanks!</button>
+      </div>
+    `,
+      )
+      .join("");
 
     container.querySelectorAll(".sq-banner-card").forEach((card) => {
       card.querySelector(".sq-banner-dismiss").addEventListener("click", () => {
-        if (card.dataset.kind === "bonus") store.markBonusGrantSeen(kidId, card.dataset.id);
-        else store.markCheerSeen(kidId, card.dataset.id);
+        store.markBonusGrantSeen(kidId, card.dataset.id);
         card.remove();
       });
     });
@@ -793,34 +808,16 @@ export function createUi({ store, catalogs }) {
     return { hero, goal, saveTotal, goalPct, recentUnlocks, playMinutes, learnedLessons: [...learnedLessons] };
   }
 
+  // The always-visible Goal Request card. Mounts into
+  // #savingsQuestParentPanel, which stays near the top of the Parent
+  // page (see index.html) — this is an actionable item, not reference
+  // material, so it does NOT move down with the collapsible cards.
   function renderParentPanel(container, kidId) {
-    const settings = store.getGameSettings();
     const proposal = kidId ? store.getGoalProposal(kidId) : null;
     const showApproval = Boolean(proposal && proposal.status === "pending");
-    const kidSettings = kidId ? store.getKidSettings(kidId) : null;
-    const report = kidId ? buildWeeklyReport(kidId) : null;
-    const family = buildFamilyQuestContext();
-    const familyPct = family.familyQuestTarget
-      ? Math.min(100, Math.round((family.familyQuestProgress / family.familyQuestTarget) * 100))
-      : 0;
-    const familyUnlocked = isItemUnlocked({ unlock: { type: "familyQuest", value: 1 } }, family);
-    const quietHours = kidSettings ? kidSettings.quietHours : null;
 
-    container.innerHTML = `
-      <div class="sq-card">
-        <h2>🗡️ Savings Quest</h2>
-        <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
-          <input type="checkbox" id="sqEnableToggle" ${settings.family.savingsQuestEnabled ? "checked" : ""}>
-          Turn on Savings Quest
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--mm-gray-70);">
-          <input type="checkbox" id="sqReducedMotionToggle" ${settings.family.reducedMotion ? "checked" : ""}>
-          Reduce motion / animation
-        </label>
-      </div>
-      ${
-        showApproval
-          ? `
+    container.innerHTML = showApproval
+      ? `
         <div class="sq-card">
           <h2>🎯 Goal Request</h2>
           <p>Wants to save for <strong>${escapeHtml(proposal.name)}</strong> — $${proposal.target}</p>
@@ -835,13 +832,72 @@ export function createUi({ store, catalogs }) {
           </div>
         </div>
       `
-          : ""
-      }
+      : "";
+
+    if (!showApproval) return;
+
+    container.querySelector("#sqApproveGoalBtn").addEventListener("click", () => {
+      if (window.setGoal) window.setGoal(kidId, proposal.name, proposal.target);
+      store.resolveGoalProposal(kidId, "approved");
+      // Bug fix: window.setGoal() only writes the data — it doesn't
+      // re-render Money Muscle's own "Streak & Savings Goal" card,
+      // which has no idea anything changed until its own render cycle
+      // runs again. Calling renderParentView() (Money Muscle's own
+      // full Parent-view render, the same thing its own "Set Goal"
+      // button already triggers after a manual setGoal) makes that
+      // card pick up the kid's approved goal immediately — and, via
+      // window.SavingsQuest.renderParentPanel() built into that
+      // function, refreshes this card AND the collapsible cards below
+      // (e.g. "This Week's Progress," which also shows the goal name)
+      // in one pass. The direct call below is a fallback for the
+      // (never-expected) case that global is missing.
+      if (window.renderParentView) window.renderParentView();
+      else renderParentPanel(container, kidId);
+    });
+    container.querySelector("#sqDeclineGoalBtn").addEventListener("click", () => {
+      store.resolveGoalProposal(kidId, "declined");
+      renderParentPanel(container, kidId);
+    });
+  }
+
+  // The collapsed-by-default cards: the main enable/motion toggles,
+  // this week's progress, per-child game settings, and manual Bonus
+  // XP. Mounts into #savingsQuestParentCollapsibles, placed near the
+  // bottom of the Parent page alongside Money Muscle's own collapsible
+  // cards (Past Rounds, Totals So Far, etc.) — reference/history a
+  // parent checks occasionally, not something they act on every visit.
+  function renderParentCollapsibles(container, kidId) {
+    const settings = store.getGameSettings();
+    const kidSettings = kidId ? store.getKidSettings(kidId) : null;
+    const report = kidId ? buildWeeklyReport(kidId) : null;
+    const quietHours = kidSettings ? kidSettings.quietHours : null;
+
+    container.innerHTML = `
+      <div class="sq-card">
+        <button type="button" class="instructions-toggle" id="sqMainToggle" aria-expanded="${parentCardOpen.main}" aria-controls="sqMainBody">
+          <span>🗡️ Savings Quest</span>
+          <span class="instructions-chevron${parentCardOpen.main ? " open" : ""}" id="sqMainChevron">▾</span>
+        </button>
+        <div id="sqMainBody" style="display:${parentCardOpen.main ? "block" : "none"};margin-top:14px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
+            <input type="checkbox" id="sqEnableToggle" ${settings.family.savingsQuestEnabled ? "checked" : ""}>
+            Turn on Savings Quest
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--mm-gray-70);">
+            <input type="checkbox" id="sqReducedMotionToggle" ${settings.family.reducedMotion ? "checked" : ""}>
+            Reduce motion / animation
+          </label>
+        </div>
+      </div>
       ${
         report
           ? `
         <div class="sq-card">
-          <h2>📊 This Week's Progress</h2>
+          <button type="button" class="instructions-toggle" id="sqProgressToggle" aria-expanded="${parentCardOpen.progress}" aria-controls="sqProgressBody">
+            <span>📊 This Week's Progress</span>
+            <span class="instructions-chevron${parentCardOpen.progress ? " open" : ""}" id="sqProgressChevron">▾</span>
+          </button>
+          <div id="sqProgressBody" style="display:${parentCardOpen.progress ? "block" : "none"};margin-top:14px;">
           <p class="sq-xp-label">Level ${report.hero.level}${report.goal ? ` &middot; saving for ${escapeHtml(report.goal.name)}` : ""}</p>
           ${
             report.goalPct !== null
@@ -863,6 +919,7 @@ export function createUi({ store, catalogs }) {
                   .join("")}</ul>`
               : `<p class="sq-world-gate-hint">No world lessons yet this week — try a puzzle in the World tab!</p>`
           }
+          </div>
         </div>
       `
           : ""
@@ -871,7 +928,11 @@ export function createUi({ store, catalogs }) {
         kidSettings
           ? `
         <div class="sq-card">
-          <h2>⚙️ Game Settings for This Child</h2>
+          <button type="button" class="instructions-toggle" id="sqSettingsToggle" aria-expanded="${parentCardOpen.settings}" aria-controls="sqSettingsBody">
+            <span>⚙️ Game Settings for This Child</span>
+            <span class="instructions-chevron${parentCardOpen.settings ? " open" : ""}" id="sqSettingsChevron">▾</span>
+          </button>
+          <div id="sqSettingsBody" style="display:${parentCardOpen.settings ? "block" : "none"};margin-top:14px;">
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
             <input type="checkbox" id="sqKidEnabledToggle" ${kidSettings.enabled ? "checked" : ""}>
             Enable the game for this child
@@ -904,10 +965,15 @@ export function createUi({ store, catalogs }) {
             Match rate (% extra XP)<br>
             <input type="number" min="0" step="10" id="sqParentMatchRateInput" value="${Math.round(kidSettings.parentMatchRate * 100)}" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100px;">
           </label>
+          </div>
         </div>
 
         <div class="sq-card">
-          <h2>✨ Manual Bonus XP</h2>
+          <button type="button" class="instructions-toggle" id="sqBonusToggle" aria-expanded="${parentCardOpen.bonus}" aria-controls="sqBonusBody">
+            <span>✨ Manual Bonus XP</span>
+            <span class="instructions-chevron${parentCardOpen.bonus ? " open" : ""}" id="sqBonusChevron">▾</span>
+          </button>
+          <div id="sqBonusBody" style="display:${parentCardOpen.bonus ? "block" : "none"};margin-top:14px;">
           <p class="sq-world-gate-hint">Reward a good money decision directly — this always counts toward leveling up.</p>
           <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
             XP amount<br>
@@ -918,37 +984,17 @@ export function createUi({ store, catalogs }) {
             <input type="text" id="sqBonusNoteInput" placeholder="e.g. Great job comparing prices before buying!" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100%;max-width:320px;">
           </label>
           <button type="button" class="sq-primary-btn" id="sqGrantBonusBtn">Grant Bonus XP</button>
+          </div>
         </div>
       `
           : ""
       }
-      <div class="sq-card">
-        <h2>🤝 Family Quest</h2>
-        <p class="sq-world-gate-hint">Everyone's real Save totals count toward one shared family goal.</p>
-        <div class="sq-xp-track"><div class="sq-xp-fill" style="width:${familyPct}%"></div></div>
-        <p class="sq-xp-label">$${Math.round(family.familyQuestProgress)} of $${family.familyQuestTarget} saved together (${familyPct}%)</p>
-        ${
-          familyUnlocked
-            ? `<p style="font-weight:700;color:var(--mm-green-dark);">🎉 Unlocked! The Family Unity Banner is now available for everyone to equip.</p>`
-            : ""
-        }
-        <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin:10px 0;">
-          Family Quest target ($)<br>
-          <input type="number" min="1" id="sqFamilyTargetInput" value="${family.familyQuestTarget}" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100px;">
-        </label>
-        ${
-          kidId
-            ? `
-          <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
-            Send a cheer to this child<br>
-            <input type="text" id="sqCheerInput" placeholder="e.g. So proud of your saving streak!" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100%;max-width:320px;">
-          </label>
-          <button type="button" class="sq-decline-btn" id="sqSendCheerBtn">Send Cheer 💌</button>
-        `
-            : ""
-        }
-      </div>
     `;
+
+    wireParentCardToggle(container, "main", "sqMainToggle", "sqMainBody", "sqMainChevron");
+    wireParentCardToggle(container, "progress", "sqProgressToggle", "sqProgressBody", "sqProgressChevron");
+    wireParentCardToggle(container, "settings", "sqSettingsToggle", "sqSettingsBody", "sqSettingsChevron");
+    wireParentCardToggle(container, "bonus", "sqBonusToggle", "sqBonusBody", "sqBonusChevron");
 
     container.querySelector("#sqEnableToggle").addEventListener("change", (e) => {
       const s = store.getGameSettings();
@@ -962,32 +1008,6 @@ export function createUi({ store, catalogs }) {
       store.setGameSettings(s);
       applyMotionPreference(store);
     });
-
-    if (showApproval) {
-      container.querySelector("#sqApproveGoalBtn").addEventListener("click", () => {
-        if (window.setGoal) window.setGoal(kidId, proposal.name, proposal.target);
-        store.resolveGoalProposal(kidId, "approved");
-        // Bug fix: window.setGoal() only writes the data — it doesn't
-        // re-render Money Muscle's own "Streak & Savings Goal" card,
-        // which has no idea anything changed until its own render
-        // cycle runs again. Calling renderParentView() (Money Muscle's
-        // own full Parent-view render, the same thing its own "Set
-        // Goal" button already triggers after a manual setGoal) makes
-        // that card pick up the kid's approved goal immediately instead
-        // of still saying "No savings goal set yet." until the next
-        // tab switch. It also re-renders this very panel, via the
-        // window.SavingsQuest.renderParentPanel() call already built
-        // into that function — so the direct call below is a fallback
-        // for the (never-expected) case that global is missing, not a
-        // redundant double-render in the normal case.
-        if (window.renderParentView) window.renderParentView();
-        else renderParentPanel(container, kidId);
-      });
-      container.querySelector("#sqDeclineGoalBtn").addEventListener("click", () => {
-        store.resolveGoalProposal(kidId, "declined");
-        renderParentPanel(container, kidId);
-      });
-    }
 
     if (kidSettings) {
       container.querySelector("#sqKidEnabledToggle").addEventListener("change", (e) => {
@@ -1034,27 +1054,10 @@ export function createUi({ store, catalogs }) {
         const note = container.querySelector("#sqBonusNoteInput").value.trim();
         if (!note) return;
         store.grantBonusXp(kidId, { amount, note, grantedAt: new Date().toISOString() });
-        renderParentPanel(container, kidId);
+        renderParentCollapsibles(container, kidId);
       });
     }
 
-    container.querySelector("#sqFamilyTargetInput").addEventListener("change", (e) => {
-      const s = store.getGameSettings();
-      s.family.familyQuestTarget = Math.max(1, parseInt(e.target.value, 10) || CONFIG.FAMILY_QUEST_DEFAULT_TARGET);
-      store.setGameSettings(s);
-      renderParentPanel(container, kidId);
-    });
-
-    if (kidId) {
-      container.querySelector("#sqSendCheerBtn").addEventListener("click", () => {
-        const input = container.querySelector("#sqCheerInput");
-        const message = input.value.trim();
-        if (!message) return;
-        store.sendCheer(kidId, message, new Date().toISOString());
-        input.value = "";
-        input.placeholder = "Cheer sent! 💌";
-      });
-    }
   }
 
   function showCoinBurst(anchorEl) {
@@ -1093,6 +1096,7 @@ export function createUi({ store, catalogs }) {
   return {
     renderKidPanel,
     renderParentPanel,
+    renderParentCollapsibles,
     showCoinBurst,
     showLevelUpOverlay,
     evaluateAndRevealUnlocks,

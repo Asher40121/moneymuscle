@@ -468,6 +468,29 @@ test("getWeeklySaveDollars sums only this week's net Save dollars for the given 
   assert.equal(store.getWeeklySaveDollars("kid-1", "2026-10-16T00:00:00.000Z"), 7);
 });
 
+test("getWeeklyGiveDollars sums only this week's Give dollars for the given kid", () => {
+  const store = freshStore();
+  store.recordGiveEvent({
+    kidId: "kid-1",
+    amount: 2,
+    sourceEventId: "evt-1",
+    now: "2026-10-14T00:00:00.000Z", // a Wednesday
+  });
+  store.recordGiveEvent({
+    kidId: "kid-1",
+    amount: 5,
+    sourceEventId: "evt-2",
+    now: "2026-10-15T00:00:00.000Z", // same week
+  });
+  store.recordGiveEvent({
+    kidId: "kid-1",
+    amount: 50,
+    sourceEventId: "evt-3",
+    now: "2026-09-01T00:00:00.000Z", // a different week entirely
+  });
+  assert.equal(store.getWeeklyGiveDollars("kid-1", "2026-10-16T00:00:00.000Z"), 7);
+});
+
 test("completeQuest is idempotent per period and its reward counts toward level", () => {
   const store = freshStore();
   const first = store.completeQuest("kid-1", "daily_checkin", "2026-10-14", 5, "2026-10-14T00:00:00.000Z");

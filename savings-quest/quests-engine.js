@@ -13,8 +13,9 @@ export function isDailyCheckinQuestComplete(lastCheckInDate, now) {
   return lastCheckInDate.slice(0, 10) === new Date(now).toISOString().slice(0, 10);
 }
 
-// The Weekly Savings Raid is complete once real net Save dollars this
-// week meet or exceed the quest's target.
-export function isWeeklySavingsRaidComplete(weeklySaveDollars, targetAmount) {
-  return weeklySaveDollars >= targetAmount;
+// Generic weekly-dollar-target check — the Weekly Savings Raid and the
+// Weekly Giving Quest both just ask "did this bucket's real dollars
+// this week meet or exceed the target," so one function covers both.
+export function isWeeklyTargetMet(weeklyDollars, targetAmount) {
+  return weeklyDollars >= targetAmount;
 }

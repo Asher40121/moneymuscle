@@ -1269,7 +1269,7 @@
         <div class="instructions-body" id="instructionsBody" style="display:none;">
           <p><strong>What is Money Muscle?</strong> It helps your kids build real money habits by giving every dollar a job — <strong>Give</strong>, <strong>Save</strong>, or <strong>Spend</strong> — instead of it just sitting around.</p>
 
-          <p><strong>1. Add your kids.</strong> Use the "Your Kids" card below to add each child who'll be using the app.</p>
+          <p><strong>1. Add your kids.</strong> Use the "Your Kids" card to add each child who'll be using the app.</p>
 
           <p><strong>2. Set up chores (optional).</strong> Add chores with a price in the "Chores" card. Your kid can mark one done — with a photo of the finished work — and you'll get a notification here to pay them, ask for a redo, or dismiss it.</p>
 
@@ -1344,13 +1344,28 @@
         <div id="parentGoalDisplay"></div>
       </div>
 
+      <!-- Everything below is collapsed-by-default: reference/history
+           cards a parent checks occasionally, not the things they act
+           on every visit. -->
+
+      <div id="savingsQuestParentCollapsibles"></div>
+
       <div class="card" id="savingsWinsCard">
-        <h2>🏆 Savings Wins</h2>
-        <ul class="round-list" id="parentSavingsWinsList"></ul>
+        <button class="instructions-toggle" id="savingsWinsToggle" aria-expanded="false" aria-controls="savingsWinsBody">
+          <span>🏆 Savings Wins</span>
+          <span class="instructions-chevron" id="savingsWinsChevron">▾</span>
+        </button>
+        <div id="savingsWinsBody" style="display:none;margin-top:14px;">
+          <ul class="round-list" id="parentSavingsWinsList"></ul>
+        </div>
       </div>
 
       <div class="card">
-        <h2>Totals So Far</h2>
+        <button class="instructions-toggle" id="totalsToggle" aria-expanded="false" aria-controls="totalsBody">
+          <span>Totals So Far</span>
+          <span class="instructions-chevron" id="totalsChevron">▾</span>
+        </button>
+        <div id="totalsBody" style="display:none;margin-top:14px;">
         <div class="totals-grid">
           <div class="total-pill give">
             <div class="label">❤️ Give</div>
@@ -1365,11 +1380,17 @@
             <div class="amount" id="totalSpend">$0</div>
           </div>
         </div>
+        </div>
       </div>
 
       <div class="card">
-        <h2>Past Rounds</h2>
-        <ul class="round-list" id="roundList"></ul>
+        <button class="instructions-toggle" id="roundsToggle" aria-expanded="false" aria-controls="roundsBody">
+          <span>Past Rounds</span>
+          <span class="instructions-chevron" id="roundsChevron">▾</span>
+        </button>
+        <div id="roundsBody" style="display:none;margin-top:14px;">
+          <ul class="round-list" id="roundList"></ul>
+        </div>
       </div>
     </div>
 
@@ -1407,11 +1428,6 @@
               <div class="amount" id="kidTotalSpend">$0</div>
             </div>
           </div>
-        </div>
-
-        <div class="card" id="kidSavingsWinsCard" style="display:none;">
-          <h2>🏆 Savings Wins</h2>
-          <ul class="round-list" id="kidSavingsWinsList"></ul>
         </div>
 
         <div id="kidCelebration" class="celebration-card" style="display:none;">
@@ -1533,6 +1549,16 @@
           <button class="split-btn" id="splitBtn">Split it! 💪</button>
 
           <div id="message"></div>
+        </div>
+
+        <div class="card" id="kidSavingsWinsCard" style="display:none;">
+          <button class="instructions-toggle" id="kidSavingsWinsToggle" aria-expanded="false" aria-controls="kidSavingsWinsBody">
+            <span>🏆 Savings Wins</span>
+            <span class="instructions-chevron" id="kidSavingsWinsChevron">▾</span>
+          </button>
+          <div id="kidSavingsWinsBody" style="display:none;margin-top:14px;">
+            <ul class="round-list" id="kidSavingsWinsList"></ul>
+          </div>
         </div>
       </div>
     </div>
@@ -2064,16 +2090,28 @@
 
     // ---------- Parent view ----------
 
-    const instructionsToggle = document.getElementById('instructionsToggle');
-    const instructionsBody = document.getElementById('instructionsBody');
-    const instructionsChevron = document.getElementById('instructionsChevron');
+    // Shared wiring for every collapsed-by-default card: a toggle
+    // button, the body it shows/hides, and a chevron that flips when
+    // open. Re-querying by id each click (rather than caching the
+    // elements) means this works even for cards whose body/chevron get
+    // replaced wholesale by some other render function later.
+    function wireCollapsible(toggleId, bodyId, chevronId) {
+      const toggle = document.getElementById(toggleId);
+      toggle.addEventListener('click', () => {
+        const body = document.getElementById(bodyId);
+        const chevron = document.getElementById(chevronId);
+        const isOpen = body.style.display === 'block';
+        body.style.display = isOpen ? 'none' : 'block';
+        chevron.classList.toggle('open', !isOpen);
+        toggle.setAttribute('aria-expanded', String(!isOpen));
+      });
+    }
 
-    instructionsToggle.addEventListener('click', () => {
-      const isOpen = instructionsBody.style.display === 'block';
-      instructionsBody.style.display = isOpen ? 'none' : 'block';
-      instructionsChevron.classList.toggle('open', !isOpen);
-      instructionsToggle.setAttribute('aria-expanded', String(!isOpen));
-    });
+    wireCollapsible('instructionsToggle', 'instructionsBody', 'instructionsChevron');
+    wireCollapsible('roundsToggle', 'roundsBody', 'roundsChevron');
+    wireCollapsible('savingsWinsToggle', 'savingsWinsBody', 'savingsWinsChevron');
+    wireCollapsible('totalsToggle', 'totalsBody', 'totalsChevron');
+    wireCollapsible('kidSavingsWinsToggle', 'kidSavingsWinsBody', 'kidSavingsWinsChevron');
 
     const parentKidPillsEl = document.getElementById('parentKidPills');
     const newKidNameInput = document.getElementById('newKidName');

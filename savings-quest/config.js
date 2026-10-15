@@ -39,6 +39,16 @@ export const CONFIG = {
   MILESTONE_THRESHOLDS: [0.25, 0.5, 0.75, 1.0],
 
   // ---------------------------------------------------------------------
+  // GIVING GARDEN — the Give-side counterpart to the savings-goal
+  // landmark, but open-ended rather than staged toward one fixed
+  // target: a new tree grows for every GIVING_TREE_DOLLARS_PER_TREE of
+  // lifetime real Give dollars, up to GIVING_GARDEN_MAX_TREES (purely a
+  // visual/layout cap — giving itself is never limited or blocked).
+  // ---------------------------------------------------------------------
+  GIVING_TREE_DOLLARS_PER_TREE: 10,
+  GIVING_GARDEN_MAX_TREES: 8,
+
+  // ---------------------------------------------------------------------
   // HEART (Giving) — its own track, driven by the Give bucket. Never
   // reduces Level XP or Save power; purely additive, purely separate.
   // ---------------------------------------------------------------------

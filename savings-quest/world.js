@@ -22,6 +22,7 @@ import { isItemUnlocked, describeUnlockRequirement } from "./unlocks.js";
 import {
   canEnterRegion,
   computeLandmarkStage,
+  computeGivenTreeCount,
   checkCoinOrderPuzzle,
   checkNeedsWantsSort,
   checkBossSequence,
@@ -178,6 +179,26 @@ function buildTextures(scene) {
     g.fillTriangle(2, s / 2, s / 2, 4, s - 2, s / 2);
   });
 
+  // The Giving Garden's landmark — a tree, full-bloom vs. a bare
+  // sapling, same role as landmark/landmark-silhouette above but for
+  // the Give-driven counterpart (see config.js's GIVING_LANDMARK_TARGET).
+  make("giving-tree", 56, (g, s) => {
+    g.fillStyle(0x8e5a2b, 1);
+    g.fillRect(s / 2 - 4, s / 2 + 6, 8, s / 2 - 8);
+    g.fillStyle(0x1fa34a, 1);
+    g.fillCircle(s / 2, s / 2 - 2, 16);
+    g.fillStyle(0xe0527a, 1);
+    g.fillCircle(s / 2 - 10, s / 2 - 6, 3);
+    g.fillCircle(s / 2 + 9, s / 2 - 10, 3);
+    g.fillCircle(s / 2 + 2, s / 2 + 6, 3);
+  });
+
+  make("giving-tree-silhouette", 56, (g, s) => {
+    g.fillStyle(0xcfd4d6, 1);
+    g.fillRect(s / 2 - 4, s / 2 + 6, 8, s / 2 - 8);
+    g.fillCircle(s / 2, s / 2 - 2, 16);
+  });
+
   make("stepping-stone", 16, (g, s) => {
     g.fillStyle(0xd8b36a, 1);
     g.fillCircle(s / 2, s / 2, s / 2 - 1);
@@ -268,8 +289,9 @@ function getRegionSceneClass() {
     }
 
     this.landmarkStones = [];
+    this.gardenTrees = [];
     this.landmarkSprite = null;
-    if (this.opts.regionDef.hasLandmark) {
+    if (this.opts.regionDef.landmarkType === "save") {
       const stageCount = CONFIG.MILESTONE_THRESHOLDS.length;
       const startX = 140;
       const endX = width - 140;
@@ -284,6 +306,21 @@ function getRegionSceneClass() {
         height / 2 + 140,
         this.opts.landmarkStage >= stageCount ? "landmark" : "landmark-silhouette",
       );
+      this.landmarkSprite.isLandmark = true;
+    } else if (this.opts.regionDef.landmarkType === "give") {
+      // One slot per possible tree (not per milestone stage) — grown
+      // trees up to landmarkTreeCount, bare silhouettes for the rest,
+      // so the garden visibly fills in left-to-right as giving adds up.
+      const maxTrees = CONFIG.GIVING_GARDEN_MAX_TREES;
+      const startX = 140;
+      const endX = width - 140;
+      for (let i = 0; i < maxTrees; i++) {
+        const x = startX + ((endX - startX) * i) / (maxTrees - 1);
+        const grown = i < this.opts.landmarkTreeCount;
+        const tree = this.add.image(x, height / 2 + 140, grown ? "giving-tree" : "giving-tree-silhouette");
+        this.gardenTrees.push(tree);
+      }
+      this.landmarkSprite = this.gardenTrees[0];
       this.landmarkSprite.isLandmark = true;
     }
 
@@ -503,6 +540,30 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
     return catalogs.regions.regions.filter((r) => isItemUnlocked(r, heroContext));
   }
 
+  // The real savings-goal landmark's stage (0 for any region that
+  // isn't the "save" landmark). Shared by the canvas path and the Hero
+  // Hub fallback so the two can never disagree.
+  function computeRegionLandmarkStage(regionDef, heroContext) {
+    if (regionDef.landmarkType !== "save") return 0;
+    return computeLandmarkStage({
+      progressAmount: heroContext.currentSaveTotal,
+      targetAmount: heroContext.goalTarget,
+      thresholds: CONFIG.MILESTONE_THRESHOLDS,
+    });
+  }
+
+  // The Giving Garden's tree count (0 for any region that isn't the
+  // "give" landmark) — open-ended, one tree per
+  // CONFIG.GIVING_TREE_DOLLARS_PER_TREE of lifetime real Give dollars.
+  function computeRegionTreeCount(regionDef, heroContext) {
+    if (regionDef.landmarkType !== "give") return 0;
+    return computeGivenTreeCount(
+      heroContext.lifetimeGiveTotal,
+      CONFIG.GIVING_TREE_DOLLARS_PER_TREE,
+      CONFIG.GIVING_GARDEN_MAX_TREES,
+    );
+  }
+
   function isMuted() {
     return Boolean(store.getGameSettings().family.muted);
   }
@@ -648,13 +709,8 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
     const puzzleDef = regionDef.puzzleId ? catalogs.puzzles.puzzles.find((p) => p.id === regionDef.puzzleId) : null;
     const bossDef = regionDef.bossId ? catalogs.bosses.bosses.find((b) => b.id === regionDef.bossId) : null;
     const bossUnlocked = Boolean(bossDef && isItemUnlocked(bossDef, heroContext));
-    const landmarkStage = regionDef.hasLandmark
-      ? computeLandmarkStage({
-          currentSaveTotal: heroContext.currentSaveTotal,
-          goalTarget: heroContext.goalTarget,
-          thresholds: CONFIG.MILESTONE_THRESHOLDS,
-        })
-      : 0;
+    const landmarkStage = computeRegionLandmarkStage(regionDef, heroContext);
+    const landmarkTreeCount = computeRegionTreeCount(regionDef, heroContext);
 
     container.innerHTML = `
       <div class="sq-world-shell">
@@ -703,6 +759,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       bossDef,
       bossUnlocked,
       landmarkStage,
+      landmarkTreeCount,
       isMuted, // update()'s creature-bump reaction needs this; isMuted() itself lives outside the Scene class
       onNearbyChange: (nearby) => {
         if (!nearby) {
@@ -719,7 +776,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
               ? "Puzzle (solved)"
               : "Try the puzzle",
           boss: `Face ${bossDef ? bossDef.name : "the boss"}`,
-          landmark: "Visit your goal",
+          landmark: regionDef.landmarkType === "give" ? "Visit the Giving Garden" : "Visit your goal",
         };
         interactBtn.textContent = labels[nearby.type] || "Interact";
       },
@@ -745,10 +802,14 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
           getRegionScene()?.markBossDefeated();
         }),
       onLandmark: () => {
-        if (landmarkStage >= CONFIG.MILESTONE_THRESHOLDS.length) {
-          showLandmarkCelebration();
+        if (regionDef.landmarkType === "give") {
+          const maxed = landmarkTreeCount >= CONFIG.GIVING_GARDEN_MAX_TREES;
+          if (maxed) showGivingGardenCelebration(landmarkTreeCount);
+          else showGivingGardenProgress(landmarkTreeCount, heroContext.lifetimeGiveTotal);
         } else {
-          showLandmarkProgress(landmarkStage);
+          const complete = landmarkStage >= CONFIG.MILESTONE_THRESHOLDS.length;
+          if (complete) showLandmarkCelebration();
+          else showLandmarkProgress(landmarkStage);
         }
       },
     };
@@ -912,8 +973,10 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
               : ""
           }
           ${
-            regionDef.hasLandmark
-              ? `<button type="button" class="sq-decline-btn" data-action="landmark">Visit your goal</button>`
+            regionDef.landmarkType
+              ? `<button type="button" class="sq-decline-btn" data-action="landmark">${
+                  regionDef.landmarkType === "give" ? "Visit the Giving Garden" : "Visit your goal"
+                }</button>`
               : ""
           }
         </div>
@@ -953,13 +1016,16 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       );
       card.querySelectorAll("[data-action='landmark']").forEach((b) =>
         b.addEventListener("click", () => {
-          const stage = computeLandmarkStage({
-            currentSaveTotal: heroContext.currentSaveTotal,
-            goalTarget: heroContext.goalTarget,
-            thresholds: CONFIG.MILESTONE_THRESHOLDS,
-          });
-          if (stage >= CONFIG.MILESTONE_THRESHOLDS.length) showLandmarkCelebration();
-          else showLandmarkProgress(stage);
+          if (regionDef.landmarkType === "give") {
+            const treeCount = computeRegionTreeCount(regionDef, heroContext);
+            const maxed = treeCount >= CONFIG.GIVING_GARDEN_MAX_TREES;
+            if (maxed) showGivingGardenCelebration(treeCount);
+            else showGivingGardenProgress(treeCount, heroContext.lifetimeGiveTotal);
+          } else {
+            const stage = computeRegionLandmarkStage(regionDef, heroContext);
+            if (stage >= CONFIG.MILESTONE_THRESHOLDS.length) showLandmarkCelebration();
+            else showLandmarkProgress(stage);
+          }
         }),
       );
 
@@ -1203,6 +1269,49 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       </div>
     `,
       "Arrival celebration: your savings goal landmark is complete",
+    );
+    const btn = overlay.querySelector("button");
+    btn.addEventListener("click", () => overlay.remove());
+    btn.focus();
+  }
+
+  // The Giving Garden — open-ended, not staged toward one fixed target:
+  // a new tree grows for every CONFIG.GIVING_TREE_DOLLARS_PER_TREE of
+  // lifetime real Give dollars, up to CONFIG.GIVING_GARDEN_MAX_TREES
+  // (a visual cap only — giving itself is never limited).
+  function showGivingGardenProgress(treeCount, lifetimeGiveTotal) {
+    const dollarsPerTree = CONFIG.GIVING_TREE_DOLLARS_PER_TREE;
+    const nextTreeAt = (treeCount + 1) * dollarsPerTree;
+    const remaining = Math.max(0, Math.round(nextTreeAt - lifetimeGiveTotal));
+    const overlay = baseOverlay(
+      `
+      <div class="sq-levelup-card">
+        <div style="font-size:2.5rem;" aria-hidden="true">🌱</div>
+        <h2>Growing!</h2>
+        <p>Your Giving Garden has ${treeCount} tree${treeCount === 1 ? "" : "s"} so far (${Math.round(
+          lifetimeGiveTotal,
+        )} given in all). Give $${remaining} more to grow your next tree!</p>
+        <button type="button" class="sq-levelup-done-btn">Keep going!</button>
+      </div>
+    `,
+      "Your Giving Garden, in progress",
+    );
+    const btn = overlay.querySelector("button");
+    btn.addEventListener("click", () => overlay.remove());
+    btn.focus();
+  }
+
+  function showGivingGardenCelebration(treeCount) {
+    const overlay = baseOverlay(
+      `
+      <div class="sq-levelup-card">
+        <div style="font-size:3rem;" aria-hidden="true">🌳✨</div>
+        <h2>Full bloom!</h2>
+        <p>Your Giving Garden has grown all ${treeCount} trees — full bloom! Your generosity grew something real.</p>
+        <button type="button" class="sq-levelup-done-btn">Woohoo!</button>
+      </div>
+    `,
+      "Arrival celebration: your Giving Garden is in full bloom",
     );
     const btn = overlay.querySelector("button");
     btn.addEventListener("click", () => overlay.remove());

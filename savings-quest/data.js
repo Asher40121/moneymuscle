@@ -596,6 +596,17 @@ export function createSavingsQuestStore(storage) {
       .reduce((sum, e) => sum + (e.meta?.netAmount || 0), 0);
   }
 
+  // Same idea as getWeeklySaveDollars, for the Weekly Giving Quest —
+  // the "heart" track's meta field is named dollarAmount, not
+  // netAmount (Give has no anti-farming/reversal concept the way Save
+  // does, so there's nothing to net against).
+  function getWeeklyGiveDollars(kidId, now) {
+    const weekKey = startOfWeekKey(now);
+    return ledgerForKid(kidId)
+      .filter((e) => e.track === "heart" && startOfWeekKey(e.createdAt) === weekKey)
+      .reduce((sum, e) => sum + (e.meta?.dollarAmount || 0), 0);
+  }
+
   // Idempotent per period (periodKey is a calendar-day string for
   // 'daily' quests, a week-start key for 'weekly' ones) — replaying
   // this within the same period never double-grants the reward, same
@@ -950,6 +961,7 @@ export function createSavingsQuestStore(storage) {
     getQuests,
     getQuestProgress,
     getWeeklySaveDollars,
+    getWeeklyGiveDollars,
     completeQuest,
     getWeekKey: startOfWeekKey,
     recomputeHeroState,

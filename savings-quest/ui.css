@@ -464,9 +464,17 @@
   font-family: inherit;
 }
 
-.sq-item-icon svg {
+.sq-item-icon {
   width: 48px;
   height: 48px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 2px solid var(--mm-gray-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  line-height: 1;
 }
 
 .sq-item-name {
@@ -510,7 +518,7 @@
   filter: grayscale(0.6);
 }
 
-.sq-item-locked .sq-item-icon svg {
+.sq-item-locked .sq-item-icon {
   filter: grayscale(1);
 }
 
@@ -568,6 +576,11 @@
   font-size: 0.9rem;
 }
 
+.sq-skill-icon {
+  margin-right: 6px;
+  font-size: 1.1rem;
+}
+
 .sq-skill-desc {
   font-size: 0.8rem;
   color: var(--mm-gray-70);
@@ -596,9 +609,10 @@
   cursor: not-allowed;
 }
 
-.sq-reveal-icon svg {
+.sq-reveal-icon .sq-item-icon {
   width: 72px;
   height: 72px;
+  font-size: 2.4rem;
 }
 
 .sq-reveal-rarity {

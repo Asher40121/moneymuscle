@@ -6,6 +6,7 @@ import {
   addCharge,
   isNewCalendarDay,
   computeLandmarkStage,
+  computeGivenTreeCount,
   checkCoinOrderPuzzle,
   checkNeedsWantsSort,
   checkBossSequence,
@@ -48,19 +49,32 @@ test("isNewCalendarDay: next day is new", () => {
   );
 });
 
-test("computeLandmarkStage: no active goal is stage 0", () => {
+test("computeLandmarkStage: no target set is stage 0", () => {
   assert.equal(
-    computeLandmarkStage({ currentSaveTotal: 50, goalTarget: null, thresholds: [0.25, 0.5, 0.75, 1] }),
+    computeLandmarkStage({ progressAmount: 50, targetAmount: null, thresholds: [0.25, 0.5, 0.75, 1] }),
     0,
   );
 });
 
 test("computeLandmarkStage: counts how many thresholds are crossed", () => {
   const thresholds = [0.25, 0.5, 0.75, 1];
-  assert.equal(computeLandmarkStage({ currentSaveTotal: 10, goalTarget: 100, thresholds }), 0);
-  assert.equal(computeLandmarkStage({ currentSaveTotal: 30, goalTarget: 100, thresholds }), 1);
-  assert.equal(computeLandmarkStage({ currentSaveTotal: 60, goalTarget: 100, thresholds }), 2);
-  assert.equal(computeLandmarkStage({ currentSaveTotal: 100, goalTarget: 100, thresholds }), 4);
+  assert.equal(computeLandmarkStage({ progressAmount: 10, targetAmount: 100, thresholds }), 0);
+  assert.equal(computeLandmarkStage({ progressAmount: 30, targetAmount: 100, thresholds }), 1);
+  assert.equal(computeLandmarkStage({ progressAmount: 60, targetAmount: 100, thresholds }), 2);
+  assert.equal(computeLandmarkStage({ progressAmount: 100, targetAmount: 100, thresholds }), 4);
+});
+
+test("computeGivenTreeCount: one tree per $10, rounding down", () => {
+  assert.equal(computeGivenTreeCount(0, 10, 8), 0);
+  assert.equal(computeGivenTreeCount(9, 10, 8), 0);
+  assert.equal(computeGivenTreeCount(10, 10, 8), 1);
+  assert.equal(computeGivenTreeCount(25, 10, 8), 2);
+  assert.equal(computeGivenTreeCount(49, 10, 8), 4);
+});
+
+test("computeGivenTreeCount: caps at maxTrees — giving more never grows past the visual cap", () => {
+  assert.equal(computeGivenTreeCount(80, 10, 8), 8);
+  assert.equal(computeGivenTreeCount(1000, 10, 8), 8);
 });
 
 test("checkCoinOrderPuzzle: correct ascending order passes regardless of input array order", () => {

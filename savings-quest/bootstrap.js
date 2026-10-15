@@ -43,8 +43,15 @@ function renderKidPanel() {
 function renderParentPanel() {
   if (!ui) return;
   const container = document.getElementById("savingsQuestParentPanel");
-  if (!container) return;
-  ui.renderParentPanel(container, activeKidId());
+  if (container) ui.renderParentPanel(container, activeKidId());
+
+  // The collapsed-by-default cards (This Week's Progress, Game
+  // Settings, Manual Bonus XP, and the main enable/motion toggles)
+  // live in a separate mount point near the bottom of the Parent
+  // page, so they don't share a render call with the always-visible
+  // Goal Request card above.
+  const collapsiblesContainer = document.getElementById("savingsQuestParentCollapsibles");
+  if (collapsiblesContainer) ui.renderParentCollapsibles(collapsiblesContainer, activeKidId());
 }
 
 // Stage 6 security hardening: onSplitCompleted/onChoreApproved are the

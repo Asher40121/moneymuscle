@@ -30,13 +30,27 @@ export function isNewCalendarDay(lastCheckInDate, now) {
 }
 
 // Counts how many of the (already-sorted-ascending) milestone thresholds
-// the kid's current save total has crossed toward their active goal —
-// reuses the exact same fractions items/bosses unlock against, so the
+// `progressAmount` has crossed toward `targetAmount` — reuses the exact
+// same fractions items/bosses unlock against, so the savings-goal
 // landmark path and the gear/boss unlocks always agree with each other.
-export function computeLandmarkStage({ currentSaveTotal, goalTarget, thresholds }) {
-  if (!goalTarget || goalTarget <= 0) return 0;
-  const progress = currentSaveTotal / goalTarget;
+// Used only for the Save-goal landmark; the Giving Garden is open-ended
+// (see computeGivenTreeCount below) rather than staged toward one fixed
+// target.
+export function computeLandmarkStage({ progressAmount, targetAmount, thresholds }) {
+  if (!targetAmount || targetAmount <= 0) return 0;
+  const progress = progressAmount / targetAmount;
   return thresholds.filter((t) => progress >= t).length;
+}
+
+// The Giving Garden: one tree per `dollarsPerTree` of lifetime real
+// Give dollars, open-ended rather than staged toward a single target —
+// capped at `maxTrees` for layout/rendering only (giving itself is
+// never limited; a kid who gives past the cap just doesn't get a new
+// sprite for it).
+export function computeGivenTreeCount(lifetimeGiveTotal, dollarsPerTree, maxTrees) {
+  if (!dollarsPerTree || dollarsPerTree <= 0) return 0;
+  const count = Math.floor(lifetimeGiveTotal / dollarsPerTree);
+  return Math.max(0, Math.min(maxTrees, count));
 }
 
 export function checkCoinOrderPuzzle(submittedOrder, correctValues) {

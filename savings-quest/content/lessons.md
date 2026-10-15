@@ -78,3 +78,8 @@ fight.
 |---|---|---|---|
 | Daily Check-In | Every calendar day | Check in once today | +5 XP |
 | Weekly Savings Raid | Every Monday-start week | Save at least $5 this week | +25 XP |
+| Weekly Giving Quest | Every Monday-start week | Give at least $5 this week | +25 XP |
+
+## Giving Garden (for review)
+
+A second world landmark, alongside the savings-goal landmark, living in Starter Meadow (the very first region) so generosity pays off from day one. Unlike the savings-goal landmark — which tracks progress toward whatever goal a kid's parent approved — the Giving Garden is open-ended: a brand-new tree sprite grows for every $10 of real Give dollars given, lifetime, up to a visual cap of 8 trees. It never resets, and giving past the cap is never blocked — the garden just stops adding new trees once it's full.
