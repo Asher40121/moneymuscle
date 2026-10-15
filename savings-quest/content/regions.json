@@ -1,13 +1,43 @@
 {
-  "version": 1,
-  "_note": "Placeholder shape for Stage 1. Real regions are built starting in Stage 4. 'landmarkRef' signals intent — the kid's real savings goal is meant to appear as a landmark in the world — but nothing reads this field yet.",
+  "version": 2,
+  "_note": "Stage 4 vertical slice: two regions. 'unlock' is shaped exactly like an item's unlock in items_catalog.json on purpose, so unlocks.js's isItemUnlocked() can check a region/boss with zero new code. 'hasLandmark' marks which region shows the kid's real savings goal as a world landmark (reaching 100% there triggers the arrival celebration).",
   "regions": [
     {
       "id": "meadow",
-      "name": "Sunny Meadow",
-      "unlocksAtLevel": 1,
-      "landmarkRef": "activeGoal",
-      "bossId": null
+      "name": "Starter Meadow",
+      "unlock": { "type": "level", "value": 1 },
+      "npcId": "coach_penny",
+      "puzzleId": "coin_order_meadow",
+      "bossId": null,
+      "hasLandmark": false,
+      "bgColor": "#bfe6a8",
+      "creatures": [
+        { "id": "meadow_blob_1", "kind": "blob", "x": 260, "y": 220 },
+        { "id": "meadow_blob_2", "kind": "blob", "x": 520, "y": 340 }
+      ],
+      "chests": [
+        { "id": "meadow_chest_1", "x": 120, "y": 420 },
+        { "id": "meadow_chest_2", "x": 680, "y": 140 }
+      ]
+    },
+    {
+      "id": "forest",
+      "name": "Whispering Forest",
+      "unlock": { "type": "level", "value": 4 },
+      "npcId": "sage_willow",
+      "puzzleId": "needs_wants_forest",
+      "bossId": "impulse_imp",
+      "hasLandmark": true,
+      "bgColor": "#2f6b4f",
+      "creatures": [
+        { "id": "forest_blob_1", "kind": "blob", "x": 300, "y": 180 },
+        { "id": "forest_blob_2", "kind": "blob", "x": 560, "y": 300 },
+        { "id": "forest_blob_3", "kind": "blob", "x": 200, "y": 420 }
+      ],
+      "chests": [
+        { "id": "forest_chest_1", "x": 90, "y": 300 },
+        { "id": "forest_chest_2", "x": 700, "y": 440 }
+      ]
     }
   ]
 }

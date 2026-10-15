@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "_note": "One simple puzzle per Stage 4 region, each tied to that region's money lesson. Checked by pure functions in world-engine.js (checkCoinOrderPuzzle, checkNeedsWantsSort) so the logic is unit-tested without any DOM.",
+  "puzzles": [
+    {
+      "id": "coin_order_meadow",
+      "region": "meadow",
+      "type": "coin_order",
+      "prompt": "Tap the coins from smallest to biggest.",
+      "values": [1, 5, 10, 20]
+    },
+    {
+      "id": "needs_wants_forest",
+      "region": "forest",
+      "type": "needs_wants_sort",
+      "prompt": "Sort each item into Need or Want.",
+      "items": [
+        { "id": "coat", "label": "Winter coat", "answer": "need" },
+        { "id": "game", "label": "New video game", "answer": "want" },
+        { "id": "lunch", "label": "School lunch", "answer": "need" },
+        { "id": "candy", "label": "Candy", "answer": "want" }
+      ]
+    }
+  ]
+}

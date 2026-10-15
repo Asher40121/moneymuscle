@@ -210,6 +210,81 @@ test("getHero backfills new fields onto a record saved before they existed", () 
   assert.deepEqual(hero.loadout, { weapon: null, armor: null, companion: null, cosmetic: null });
 });
 
+test("recordChoreApprovedEvent also refills stamina charge, idempotently", () => {
+  const store = freshStore();
+  store.spendStaminaCharge("kid-1", 2); // drop below max so a refill is visible
+  const before = store.getWorldState("kid-1").staminaCharge;
+  store.recordChoreApprovedEvent({
+    kidId: "kid-1",
+    price: 5,
+    sourceEventId: "evt-chore",
+    now: "2026-10-14T00:00:00.000Z",
+  });
+  assert.equal(store.getWorldState("kid-1").staminaCharge, before + 1);
+
+  // Replaying the same chore event must not double-grant charge.
+  store.recordChoreApprovedEvent({
+    kidId: "kid-1",
+    price: 5,
+    sourceEventId: "evt-chore",
+    now: "2026-10-14T00:00:00.000Z",
+  });
+  assert.equal(store.getWorldState("kid-1").staminaCharge, before + 1);
+});
+
+test("spendStaminaCharge clamps at 0 and recordDailyCheckIn is idempotent per calendar day", () => {
+  const store = freshStore();
+  const max = store.getWorldState("kid-1").staminaCharge; // starts full
+
+  store.spendStaminaCharge("kid-1", max + 10); // spend more than available
+  assert.equal(store.getWorldState("kid-1").staminaCharge, 0);
+
+  const first = store.recordDailyCheckIn("kid-1", "2026-10-14T09:00:00.000Z");
+  assert.equal(first.written, true);
+  const afterFirstCheckIn = store.getWorldState("kid-1").staminaCharge;
+  assert.ok(afterFirstCheckIn > 0);
+
+  // Same calendar day, later that day — must not grant twice.
+  const second = store.recordDailyCheckIn("kid-1", "2026-10-14T20:00:00.000Z");
+  assert.equal(second.written, false);
+  assert.equal(store.getWorldState("kid-1").staminaCharge, afterFirstCheckIn);
+
+  // Next day — grants again.
+  const third = store.recordDailyCheckIn("kid-1", "2026-10-15T09:00:00.000Z");
+  assert.equal(third.written, true);
+  assert.ok(store.getWorldState("kid-1").staminaCharge > afterFirstCheckIn);
+});
+
+test("markRegionDiscovered, openChest, solvePuzzle, and defeatBoss are each idempotent", () => {
+  const store = freshStore();
+  store.markRegionDiscovered("kid-1", "meadow");
+  store.markRegionDiscovered("kid-1", "meadow"); // replayed
+  store.openChest("kid-1", "meadow_chest_1");
+  store.openChest("kid-1", "meadow_chest_1"); // replayed
+  store.solvePuzzle("kid-1", "coin_order_meadow");
+  store.solvePuzzle("kid-1", "coin_order_meadow"); // replayed
+  store.defeatBoss("kid-1", "impulse_imp");
+  store.defeatBoss("kid-1", "impulse_imp"); // replayed
+
+  const ws = store.getWorldState("kid-1");
+  assert.deepEqual(ws.regionsDiscovered, ["meadow"]);
+  assert.deepEqual(ws.chestsOpened, ["meadow_chest_1"]);
+  assert.deepEqual(ws.puzzlesSolved, ["coin_order_meadow"]);
+  assert.deepEqual(ws.bossesDefeated, ["impulse_imp"]);
+});
+
+test("getWorldState backfills new fields onto a record saved before Stage 4 existed", () => {
+  const storage = createMemoryStorage();
+  storage.setItem(
+    "mm_sq_world_state",
+    JSON.stringify({ _v: 1, data: { "kid-1": { regionsUnlocked: ["meadow"] } } }),
+  );
+  const store = createSavingsQuestStore(storage);
+  const ws = store.getWorldState("kid-1");
+  assert.equal(ws.staminaCharge, 5); // CONFIG.STAMINA_CHARGE_MAX, backfilled
+  assert.deepEqual(ws.chestsOpened, []);
+});
+
 test("getCurrentStreakWeeks reflects only what's actually on the ledger (a pure query)", () => {
   const store = freshStore();
   assert.equal(store.getCurrentStreakWeeks("kid-1", "2026-10-14T00:00:00.000Z"), 0);

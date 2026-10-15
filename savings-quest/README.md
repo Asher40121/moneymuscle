@@ -1,9 +1,10 @@
 # Savings Quest
 
 Stage 1 (data, events, XP engine), Stage 2 (hero, dashboard card, goal
-flow), and Stage 3 (gear, skills, loadout) are all in. Everything is
-inert until the `savingsQuest` feature flag is turned on — that's a real
-checkbox in the Parent view, not just a console command.
+flow), Stage 3 (gear, skills, loadout), and Stage 4 (Open World v1) are
+all in. Everything is inert until the `savingsQuest` feature flag is
+turned on — that's a real checkbox in the Parent view, not just a
+console command.
 
 ## How to run tests
 
@@ -13,21 +14,27 @@ npm test
 ```
 
 No dependencies to install — this uses Node's built-in test runner
-(`node --test`), not Jest/Vitest. 58 tests: Stage 1's XP math, level
+(`node --test`), not Jest/Vitest. 75 tests: Stage 1's XP math, level
 curve, streaks, idempotency, withdrawal handling, anti-farming, and
 event→XP→hero-state integration; Stage 2's pure UI-logic tests
 (next-unlock teaser, milestone path state, and a guard that fails loudly
-if a hero class ever grows a numeric stat field); and Stage 3's unlock
+if a hero class ever grows a numeric stat field); Stage 3's unlock
 logic and stat calculation (`unlocks.js` — all 4 unlock condition types,
 the requirement-text phrasing including the brief's own two examples
 verbatim, newly-unlocked diffing, skill-point math and prerequisite
 gating, and stat summation with an explicit cosmetic-contributes-nothing
-guard).
+guard); and Stage 4's world logic (`world-engine.js` — stamina-charge
+clamping, the daily-check-in date rule, landmark-path staging, both
+puzzle checkers, and the boss calm-down sequence checker), plus new
+`data.js` writer tests for the stamina-charge hook on chore approval,
+daily check-in idempotency, and the four new idempotent world-state
+writers (region discovered, chest opened, puzzle solved, boss defeated).
 
-None of the DOM rendering (`ui.js`) is unit tested — this project has
-stayed dependency-free throughout, and testing rendered HTML honestly
-needs jsdom or similar. See "Demo steps" below for manual verification
-instead.
+None of the DOM/Phaser rendering (`ui.js`, `world.js`) is unit tested —
+this project has stayed dependency-free throughout (Phaser is loaded
+from a CDN only when a kid actually opens the World, not an npm
+dependency), and testing rendered HTML/canvas honestly needs jsdom or a
+real browser. See "Demo steps" below for manual verification instead.
 
 ## How to try it in the browser
 
@@ -242,3 +249,151 @@ window.SavingsQuest.runBackfill({ kidId: '...' })  // one kid
     `prefers-reduced-motion` setting, and an explicit in-app toggle in
     the Parent view (since relying on OS detection alone isn't really an
     in-app "option," which is what the brief asked for).
+
+## Stage 4 demo steps: Open World v1
+
+1. Serve the app, enable the flag, and get a hero to at least Level 1
+   (Starter Meadow's unlock level) — ideally also set and approve a
+   savings goal, since the landmark path needs one to show anything.
+2. In the Kid view, click the new **🗺️ World** tab (alongside Loadout
+   and Skills). You'll land on the **World Gate**: a row of ⚡ icons
+   showing stamina charge (starts full, 5/5), a **Daily Check-In**
+   button (+2 ⚡, once per calendar day), and an **Enter the World**
+   button — disabled if charge is at 0, with a kind "resting" message
+   instead of a warning.
+3. Click **Enter the World**. The first time, this injects the Phaser 3
+   script tag from its CDN (you'll briefly see "Loading your world...");
+   every click after that is instant since the script is already
+   cached. Entering spends 1 ⚡.
+4. You'll see **Starter Meadow**: your hero (blue dot), two wandering
+   green creatures (purely decorative — walking into them does
+   nothing), two chests, Coach Penny (the NPC), and a puzzle pedestal.
+   - **Touch**: drag the translucent joystick circle, bottom-left, or
+     tap anywhere else on the map to walk there.
+   - **Desktop**: arrow keys or WASD.
+   - Walk close to any object — the bottom-right button relabels itself
+     ("Open chest", "Talk to Coach Penny", "Try the puzzle") and
+     becomes enabled. Tap it to interact.
+5. Open both chests (instant, with a coin beep). Talk to Coach Penny
+   (a dialogue card with her saving lesson). Try the puzzle — tap the
+   four coin values from smallest to biggest; get it right for a
+   "Solved!" beep, or try again if not (no penalty either way).
+6. If you've unlocked **Whispering Forest** (Level 4), a region-switch
+   button appears at the bottom — tap it to swap regions without
+   spending more charge. Forest has Sage Willow (needs-vs-wants NPC),
+   a needs/wants sorting puzzle, and the **savings-goal landmark**: a
+   row of stepping stones (lit = a milestone you've already crossed, 25/
+   50/75/100% of your goal) leading to a building (grey silhouette until
+   100%, gold once you've fully reached your goal — walking up to it and
+   interacting shows a progress message below 100%, or the arrival
+   celebration at 100%).
+7. If your real savings have crossed the 50% milestone toward your
+   active goal, **Impulse Imp** also appears in Forest. Interact with it
+   to start the calm-down encounter: watch a 4-icon sequence flash
+   (breathe/count/wait/smile), then tap the icons back in the same
+   order from a shuffled button row. Get it right and the Imp calms
+   down (defeated, persists); get it wrong and it just re-shows the
+   sequence — no penalty, no limit on attempts.
+8. Approve a chore for this kid in Parent view, then come back to the
+   World Gate — stamina charge goes up by 1 (on top of whatever the
+   chore's own Stamina stat gain already was).
+9. To see the no-canvas fallback, click **"Prefer no map? Visit the
+   Hero Hub instead"** on the World Gate screen — the same NPCs,
+   puzzles, chests, boss, and landmark, as plain buttons and cards, no
+   canvas at all. (This is also what automatically shows if Phaser's
+   script fails to load or the browser has no canvas support — you
+   never see a raw error either way.)
+10. Use the 🔊/🔇 button in the World HUD to confirm the global mute —
+    toggling it silences every beep (chest/puzzle/boss) immediately,
+    including on the Hero Hub screen, since it's one shared setting.
+
+## Performance numbers
+
+- **Engine payload:** Phaser 3.80.1 minified is 1.18 MB raw, **≈303 KB
+  gzipped** (measured directly: `curl` the CDN file, `gzip -9 | wc -c`)
+  — about 15% of the 2 MB gzipped budget, and it's never fetched at all
+  unless a kid actually clicks "Enter the World."
+- **Scene weight:** each region scene has at most ~13 sprites total (1
+  hero + up to 3 creatures + 2 chests + 1 NPC + 1 puzzle pedestal + 1
+  boss + up to 4 stepping-stones + 1 landmark), all simple flat-shape
+  textures with no particle effects, no tilemaps, and — deliberately —
+  no physics engine at all (movement/collision/proximity are all plain
+  per-frame math in `update()`, not Arcade Physics bodies). This is
+  about as cheap as a Phaser scene gets.
+- **60fps on mid-range devices:** I could not literally benchmark this
+  (no physical device lab, no browser automation tool available this
+  session — same limitation noted in every prior stage's demo steps).
+  Given the payload size and scene weight above, there's no structural
+  reason this wouldn't hit 60fps on anything from the last several
+  years, including budget Android phones — but this is reasoning from
+  the code, not a measurement, and is worth you confirming on an actual
+  device before calling Stage 4 done.
+
+## Stage 4 assumptions (flagged for review)
+
+20. **"Use the game engine we agreed on in Stage 0" = Phaser 3 via
+    CDN**, per the exact decision recorded at the end of Stage 0:
+    "Phaser 3 via CDN script tag, kept in its own file(s) rather than
+    growing index.html further." `world.js` is that file; the CDN
+    script itself is injected lazily (see "How it's lazy-loaded" below),
+    not added to `index.html`'s `<head>`.
+21. **"Server-validated persistence" is localStorage, not a real
+    server** — same flag as Stage 3's assumption #13, same root cause
+    (this app has never had a backend; Stage 0 confirmed localStorage).
+    Chests opened, puzzles solved, bosses defeated, and regions
+    discovered all live in a new `world_state` localStorage table,
+    written through the same idempotent-writer pattern as every other
+    table in `data.js`.
+22. **Stamina as a session-length limiter is a flat cost per world
+    entry (1 of 5 charges), not a real-time countdown while playing.**
+    Rule #5 explicitly forbids "countdown pressure," and a ticking timer
+    while a kid is mid-game is exactly that. A flat entry cost — refilled
+    by chores (+1) and a once-daily check-in (+2) — limits how many
+    times per day the world can be started without ever putting a clock
+    on screen. This is a different field from the existing lifetime
+    "Stamina" stat from Stage 1 (`hero.stamina`, driven by chores,
+    never spent) — that one is untouched; the new spendable meter lives
+    separately in `world_state.staminaCharge`, same pattern as the
+    existing `powerCharge` field.
+23. **Region and boss unlocking reuses `unlocks.js`'s `isItemUnlocked`
+    unchanged** — `regions.json` and `bosses.json` both shape their
+    `unlock` field exactly like an item's (`{type, value}`), so no new
+    unlock logic was written for Stage 4 at all; it was already generic
+    enough. The boss is tied to the existing 0.5 (50%) milestone
+    fraction, reusing the same thresholds items already unlock against,
+    so the landmark path and the gear/boss unlocks can never disagree
+    with each other.
+24. **"Hidden chests" means tucked into a corner of the map, not
+    literally invisible** — there's no fog-of-war or reveal mechanic in
+    this slice; chests are visible sprites placed off the obvious
+    walking path between the other landmarks.
+25. **The boss encounter is a memory/sequence minigame, not combat** —
+    the Impulse Imp "attacks" by whispering impulse-buy pressure, and
+    the kid calms it down by repeating back a short breathe/count/wait/
+    smile sequence it demonstrates first. There's no health bar, no
+    damage, and no way to "lose" beyond trying again — chosen to satisfy
+    "non-violent" by construction rather than by just reskinning a
+    combat system.
+26. **No real art or audio files ship in this slice** — every sprite is
+    a procedurally-drawn flat shape (category/rarity-style, like the
+    Stage 3 gear icons) and every sound is a synthesized beep via the
+    Web Audio API, not a sample. See `ASSETS.md` for the full manifest
+    and exactly what to swap if/when real art and audio are ready.
+    Nothing here is third-party, so nothing needs a license credit.
+27. **One NPC, one puzzle, one boss per region — never more than the
+    brief's "one" — and both are replayable, not consumed.** Talking to
+    an NPC or retrying a solved puzzle doesn't do anything harmful (the
+    writes are idempotent), so there's no need to hide or disable
+    already-completed content; it's just there if the kid wants to see
+    it again.
+28. **Switching regions rebuilds the whole Phaser game** rather than
+    hot-swapping the running scene's data. Simpler and more obviously
+    correct (no stale per-region state can leak across a switch) at a
+    small, one-time re-boot cost per switch — acceptable given how
+    light each scene already is (see "Performance numbers").
+29. **The landmark lives only in Whispering Forest, not Starter
+    Meadow**, even though the Stage 1 placeholder `regions.json` had
+    `landmarkRef` on the meadow entry. With two real regions now, the
+    goal-as-destination framing reads better as something you journey
+    toward in the second, deeper region rather than seeing immediately
+    in the first.

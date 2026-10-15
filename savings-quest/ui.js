@@ -25,6 +25,7 @@ import {
   canLearnSkill,
   computeHeroStats,
 } from "./unlocks.js";
+import { createWorld } from "./world.js";
 
 function escapeHtml(str) {
   if (window.escapeHtml) return window.escapeHtml(str);
@@ -91,6 +92,8 @@ function densityClass(hero) {
 }
 
 export function createUi({ store, catalogs }) {
+  const world = createWorld({ store, catalogs, buildHeroContext });
+
   function renderHeroCreator(container, kidId, { onCreated }) {
     let selected = {
       look: HERO_LOOKS[0].id,
@@ -561,6 +564,13 @@ export function createUi({ store, catalogs }) {
   function renderKidPanel(container, kidId) {
     applyMotionPreference(store);
 
+    // renderKidPanel re-renders this container's whole innerHTML on
+    // every event (split, chore, etc.) — if the World tab was open and
+    // mid-game, replacing the DOM out from under a live Phaser.Game
+    // would leak its WebGL/canvas context. Always tear it down first;
+    // it's a safe no-op if no game is mounted.
+    world.destroyGame();
+
     if (!store.isSavingsQuestEnabled()) {
       container.innerHTML = "";
       container.className = "sq-panel";
@@ -586,6 +596,7 @@ export function createUi({ store, catalogs }) {
       <div id="sqHeroCardMount"></div>
       <div id="sqGoalFlowMount"></div>
       <div class="sq-tab-row">
+        <button type="button" class="sq-tab-btn" data-tab="world" aria-expanded="false">🗺️ World</button>
         <button type="button" class="sq-tab-btn" data-tab="loadout" aria-expanded="false">🎒 Loadout</button>
         <button type="button" class="sq-tab-btn" data-tab="skills" aria-expanded="false">🌳 Skills</button>
       </div>
@@ -602,14 +613,17 @@ export function createUi({ store, catalogs }) {
         const tab = btn.dataset.tab;
         if (openTab === tab) {
           openTab = null;
+          world.destroyGame();
           tabMount.innerHTML = "";
           container.querySelectorAll(".sq-tab-btn").forEach((b) => b.setAttribute("aria-expanded", "false"));
           return;
         }
+        if (openTab === "world" && tab !== "world") world.destroyGame();
         openTab = tab;
         container.querySelectorAll(".sq-tab-btn").forEach((b) =>
           b.setAttribute("aria-expanded", String(b.dataset.tab === tab)),
         );
+        if (tab === "world") world.renderWorldGate(tabMount, kidId);
         if (tab === "loadout") renderLoadoutScreen(tabMount, kidId);
         if (tab === "skills") renderSkillTree(tabMount, kidId);
       });

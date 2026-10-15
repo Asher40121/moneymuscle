@@ -608,3 +608,237 @@
   letter-spacing: 0.03em;
   margin-top: 8px;
 }
+
+/* ---------- Stage 4: Open World v1 ---------- */
+
+.sq-world-gate-hint {
+  color: var(--mm-gray-70);
+  font-size: 0.9rem;
+  margin: 8px 0 14px;
+}
+
+.sq-stamina-row {
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
+  margin: 6px 0 4px;
+}
+
+.sq-herohub-link {
+  border: none;
+  background: none;
+  color: var(--mm-blue);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 10px 0 0;
+  display: block;
+}
+
+.sq-herohub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* World canvas shell */
+
+.sq-world-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sq-world-hud-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sq-world-region-name {
+  flex: 1;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  color: var(--mm-gray-90);
+}
+
+.sq-world-hud-btn {
+  border: 2px solid var(--mm-gray-10);
+  background: var(--mm-gray-10);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: var(--sq-tap-size, 40px);
+}
+
+#sqWorldCanvasMount {
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 800 / 480;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--mm-gray-10);
+}
+
+#sqWorldCanvasMount canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.sq-world-hud-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sq-world-region-switch {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sq-world-region-btn {
+  border: 2px solid var(--mm-gray-10);
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sq-world-region-btn-active {
+  border-color: var(--mm-blue);
+  background: var(--mm-blue-bg);
+  color: var(--mm-blue);
+}
+
+.sq-world-interact-btn {
+  min-width: 160px;
+}
+
+.sq-world-interact-btn:disabled {
+  background: var(--mm-gray-50);
+  box-shadow: none;
+}
+
+/* Dialogue / puzzle / boss modals (share .sq-levelup-overlay/.sq-levelup-card) */
+
+.sq-npc-card h2,
+.sq-puzzle-card h2,
+.sq-boss-card h2 {
+  font-family: "Poppins", sans-serif;
+  color: var(--mm-green-dark);
+  font-size: 1.3rem;
+}
+
+.sq-npc-lesson {
+  font-style: italic;
+  font-weight: 700;
+  color: var(--mm-gray-90);
+}
+
+.sq-puzzle-tiles {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+
+.sq-puzzle-tile {
+  border: 2px solid var(--mm-amber);
+  background: var(--mm-amber-bg);
+  color: var(--mm-amber-dark);
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.sq-puzzle-tile:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sq-puzzle-tile-picked {
+  border-color: var(--mm-green);
+  background: var(--mm-green-bg);
+}
+
+.sq-puzzle-answer {
+  min-height: 1.4em;
+  font-weight: 700;
+  color: var(--mm-green-dark);
+}
+
+.sq-puzzle-sort {
+  text-align: left;
+  margin: 14px 0;
+}
+
+.sq-puzzle-sort-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mm-gray-10);
+}
+
+.sq-puzzle-sort-choices {
+  display: flex;
+  gap: 6px;
+}
+
+.sq-puzzle-choice {
+  border: 2px solid var(--mm-gray-10);
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sq-puzzle-choice-picked {
+  border-color: var(--mm-blue);
+  background: var(--mm-blue-bg);
+  color: var(--mm-blue);
+}
+
+.sq-boss-sequence {
+  min-height: 2.4rem;
+  font-size: 1.8rem;
+  margin: 10px 0;
+}
+
+.sq-boss-icon,
+.sq-boss-icon-flash {
+  display: inline-block;
+  margin: 0 4px;
+}
+
+.sq-boss-choices {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.sq-boss-icon-btn {
+  border: 2px solid var(--mm-gray-10);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+
+.sq-boss-win {
+  font-weight: 700;
+  color: var(--mm-green-dark);
+}

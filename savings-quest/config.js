@@ -79,4 +79,31 @@ export const CONFIG = {
   // (and its tests), not by any real UI flow.
   // ---------------------------------------------------------------------
   REVERSAL_WINDOW_DAYS: 3,
+
+  // ---------------------------------------------------------------------
+  // STAMINA CHARGE — Stage 4's "limits session length" meter. This is a
+  // SEPARATE field from hero.stamina above (that one is a lifetime XP
+  // track driven by recomputeHeroState and can never go down, exactly
+  // like Heart). Stamina Charge is a small, discrete, spendable pool —
+  // same pattern as powerCharge — that gates how many times per day a
+  // kid can enter the world, refilled by chores and a daily check-in.
+  //
+  // DESIGN CHOICE (see README Stage 4 assumptions): session length is
+  // limited by a per-entry cost, not a real-time countdown while
+  // playing. Rule #5 explicitly forbids "countdown pressure," and a
+  // ticking timer is exactly that — a flat cost per world entry achieves
+  // the same "can't play all day nonstop" goal without ever showing a
+  // clock to the kid.
+  // ---------------------------------------------------------------------
+  STAMINA_CHARGE_MAX: 5,
+  STAMINA_CHARGE_COST_PER_ENTRY: 1,
+  STAMINA_CHARGE_PER_DAILY_CHECKIN: 2,
+  STAMINA_CHARGE_PER_CHORE_APPROVED: 1,
+
+  // ---------------------------------------------------------------------
+  // WORLD — tuning for the Stage 4 open-world vertical slice.
+  // ---------------------------------------------------------------------
+  WORLD_HERO_SPEED: 160, // px/sec
+  WORLD_CREATURE_SPEED: 40, // px/sec, wandering roam speed
+  WORLD_INTERACT_RADIUS: 48, // px, how close the hero must be to interact
 };

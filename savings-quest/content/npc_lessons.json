@@ -1,12 +1,22 @@
 {
-  "version": 1,
-  "_note": "Placeholder shape for Stage 1. Real NPCs and their lessons are built in Stage 4. Edit this file to add/change NPCs — no code changes needed.",
+  "version": 2,
+  "_note": "One NPC per Stage 4 region. Lessons are plain, kind, non-judgmental, and never mention investing, stocks, or any specific product — just the basic saving/spending concepts the brief named.",
   "npcs": [
     {
       "id": "coach_penny",
       "name": "Coach Penny",
+      "region": "meadow",
+      "topic": "saving",
       "lesson": "Saving a little, often, beats saving a lot, rarely.",
-      "appearsInRegion": "meadow"
+      "detail": "Every time you tuck money into Save, future-you says thank you! It doesn't have to be a lot — small, steady amounts add up faster than most people think."
+    },
+    {
+      "id": "sage_willow",
+      "name": "Sage Willow",
+      "region": "forest",
+      "topic": "needs-vs-wants",
+      "lesson": "A need keeps you going. A want makes things fun. Both matter — just know which is which.",
+      "detail": "Before you spend, ask: do I need this, or do I just want it right now? There's nothing wrong with wants — just make sure your needs are covered first."
     }
   ]
 }

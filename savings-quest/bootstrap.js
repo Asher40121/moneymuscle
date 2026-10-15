@@ -101,13 +101,15 @@ async function loadCatalog(path) {
 }
 
 async function initUi() {
-  const [items, skills, npcLessons, regions] = await Promise.all([
+  const [items, skills, npcLessons, regions, puzzles, bosses] = await Promise.all([
     loadCatalog("savings-quest/content/items_catalog.json"),
     loadCatalog("savings-quest/content/skills_catalog.json"),
     loadCatalog("savings-quest/content/npc_lessons.json"),
     loadCatalog("savings-quest/content/regions.json"),
+    loadCatalog("savings-quest/content/puzzles.json"),
+    loadCatalog("savings-quest/content/bosses.json"),
   ]);
-  ui = createUi({ store, catalogs: { items, skills, npcLessons, regions } });
+  ui = createUi({ store, catalogs: { items, skills, npcLessons, regions, puzzles, bosses } });
   ui.applyMotionPreference();
   renderKidPanel();
   renderParentPanel();

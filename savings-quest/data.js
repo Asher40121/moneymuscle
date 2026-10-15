@@ -19,6 +19,7 @@ import {
   levelForTotalXp,
   applyWithdrawalToPowerCharge,
 } from "./engine.js";
+import { addCharge, isNewCalendarDay, spendCharge } from "./world-engine.js";
 import { CONFIG } from "./config.js";
 
 const SCHEMA_VERSION = 1;
@@ -364,8 +365,27 @@ export function createSavingsQuestStore(storage) {
     return all[kidId] || null;
   }
 
-  // --- play_sessions / world_state / quests / quest_progress — scaffolded,
-  // unused until later stages, included now so the shape exists up front.
+  // --- play_sessions / world_state / quests / quest_progress ---
+  //
+  // world_state holds everything Stage 4 needs "server-validated
+  // persistence" for: regions actually discovered, chests opened,
+  // puzzles solved, bosses defeated, and the stamina-charge meter that
+  // gates how many times per day the world can be entered. Like every
+  // other table in this file, there is no real server — this is
+  // localStorage, same as the rest of Money Muscle (flagged in the
+  // README; carries forward the Stage 0 decision).
+
+  function defaultWorldState() {
+    return {
+      regionsDiscovered: [],
+      chestsOpened: [],
+      puzzlesSolved: [],
+      bossesDefeated: [],
+      staminaCharge: CONFIG.STAMINA_CHARGE_MAX,
+      lastCheckInDate: null,
+      updatedAt: null,
+    };
+  }
 
   function getPlaySessions() {
     return load(KEYS.playSessions, []);
@@ -373,7 +393,62 @@ export function createSavingsQuestStore(storage) {
 
   function getWorldState(kidId) {
     const all = load(KEYS.worldState, {});
-    return all[kidId] || { regionsUnlocked: [] };
+    return all[kidId] ? { ...defaultWorldState(), ...all[kidId] } : defaultWorldState();
+  }
+
+  function saveWorldState(kidId, worldState) {
+    const all = load(KEYS.worldState, {});
+    all[kidId] = { ...worldState, updatedAt: new Date().toISOString() };
+    save(KEYS.worldState, all);
+    return all[kidId];
+  }
+
+  // "Dumb" writer, same pattern as grantItem/addLearnedSkill: the caller
+  // (ui.js / world.js) already checked canEnterRegion before spending.
+  function spendStaminaCharge(kidId, cost) {
+    const ws = getWorldState(kidId);
+    ws.staminaCharge = spendCharge(ws.staminaCharge, cost, CONFIG.STAMINA_CHARGE_MAX);
+    return saveWorldState(kidId, ws);
+  }
+
+  // Idempotent per calendar day — replaying this on the same day never
+  // grants charge twice, same idempotency spirit as the XP ledger.
+  function recordDailyCheckIn(kidId, now) {
+    const ws = getWorldState(kidId);
+    if (!isNewCalendarDay(ws.lastCheckInDate, now)) {
+      return { written: false, worldState: ws };
+    }
+    ws.staminaCharge = addCharge(ws.staminaCharge, CONFIG.STAMINA_CHARGE_PER_DAILY_CHECKIN, CONFIG.STAMINA_CHARGE_MAX);
+    ws.lastCheckInDate = now;
+    return { written: true, worldState: saveWorldState(kidId, ws) };
+  }
+
+  function markRegionDiscovered(kidId, regionId) {
+    const ws = getWorldState(kidId);
+    if (ws.regionsDiscovered.includes(regionId)) return { written: false, worldState: ws };
+    ws.regionsDiscovered = [...ws.regionsDiscovered, regionId];
+    return { written: true, worldState: saveWorldState(kidId, ws) };
+  }
+
+  function openChest(kidId, chestId) {
+    const ws = getWorldState(kidId);
+    if (ws.chestsOpened.includes(chestId)) return { written: false, worldState: ws };
+    ws.chestsOpened = [...ws.chestsOpened, chestId];
+    return { written: true, worldState: saveWorldState(kidId, ws) };
+  }
+
+  function solvePuzzle(kidId, puzzleId) {
+    const ws = getWorldState(kidId);
+    if (ws.puzzlesSolved.includes(puzzleId)) return { written: false, worldState: ws };
+    ws.puzzlesSolved = [...ws.puzzlesSolved, puzzleId];
+    return { written: true, worldState: saveWorldState(kidId, ws) };
+  }
+
+  function defeatBoss(kidId, bossId) {
+    const ws = getWorldState(kidId);
+    if (ws.bossesDefeated.includes(bossId)) return { written: false, worldState: ws };
+    ws.bossesDefeated = [...ws.bossesDefeated, bossId];
+    return { written: true, worldState: saveWorldState(kidId, ws) };
   }
 
   function getQuests() {
@@ -506,6 +581,13 @@ export function createSavingsQuestStore(storage) {
       meta: { price },
       createdAt: now,
     });
+    // Stage 4: the same approved chore that grants lifetime Stamina XP
+    // also refills a few points of the separate, spendable stamina
+    // CHARGE meter (see defaultWorldState). Idempotent for free, since
+    // this only runs inside the "not already recorded" branch above.
+    const ws = getWorldState(kidId);
+    ws.staminaCharge = addCharge(ws.staminaCharge, CONFIG.STAMINA_CHARGE_PER_CHORE_APPROVED, CONFIG.STAMINA_CHARGE_MAX);
+    saveWorldState(kidId, ws);
     return { written: true, hero: recomputeHeroState(kidId) };
   }
 
@@ -586,6 +668,12 @@ export function createSavingsQuestStore(storage) {
     resolveGoalProposal,
     getPlaySessions,
     getWorldState,
+    spendStaminaCharge,
+    recordDailyCheckIn,
+    markRegionDiscovered,
+    openChest,
+    solvePuzzle,
+    defeatBoss,
     getQuests,
     getQuestProgress,
     recomputeHeroState,

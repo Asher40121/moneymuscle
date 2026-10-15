@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "_note": "One non-violent Money Monster for this slice, tied to a goal milestone. 'unlock' is shaped exactly like an item's unlock so unlocks.js's isItemUnlocked() handles the gating with no new code. The encounter is a calm-down memory sequence, not combat — winning means the Imp learns patience, not that it's defeated violently.",
+  "bosses": [
+    {
+      "id": "impulse_imp",
+      "name": "Impulse Imp",
+      "region": "forest",
+      "unlock": { "type": "milestone", "value": 0.5 },
+      "flavor": "The Impulse Imp zips around whispering \"buy it now, buy it now!\" Help it slow down by showing it how to calm down.",
+      "winFlavor": "The Impulse Imp takes a deep breath... and smiles. \"Maybe I don't need it right now,\" it says.",
+      "sequence": ["breathe", "count", "wait", "smile"]
+    }
+  ]
+}
