@@ -19,7 +19,7 @@ import {
   levelForTotalXp,
   applyWithdrawalToPowerCharge,
 } from "./engine.js";
-import { addCharge, isNewCalendarDay, spendCharge } from "./world-engine.js";
+import { addCharge, isNewCalendarDay, isResetAvailable, spendCharge } from "./world-engine.js";
 import { CONFIG } from "./config.js";
 
 const SCHEMA_VERSION = 1;
@@ -523,11 +523,34 @@ export function createSavingsQuestStore(storage) {
     return { written: true, worldState: saveWorldState(kidId, ws) };
   }
 
+  // A chest grants its reward the first time it's opened, and again
+  // every time CONFIG.CHEST_RESET_MS has passed since the last open —
+  // explicitly requested, so chests stay something to come back to
+  // rather than a one-time checkbox. See config.js's note on this
+  // being a deliberate, bounded exception to this project's usual
+  // anti-farming stance (flat reward, never derived from real money).
   function openChest(kidId, chestId, now) {
     const ws = getWorldState(kidId);
-    if (ws.chestsOpened.some((e) => e.id === chestId)) return { written: false, worldState: ws };
-    ws.chestsOpened = [...ws.chestsOpened, { id: chestId, at: now }];
-    return { written: true, worldState: saveWorldState(kidId, ws) };
+    const existing = ws.chestsOpened.find((e) => e.id === chestId);
+    if (existing && !isResetAvailable(existing.at, now, CONFIG.CHEST_RESET_MS)) {
+      return { written: false, worldState: ws, rewardXp: 0 };
+    }
+
+    if (existing) existing.at = now;
+    else ws.chestsOpened = [...ws.chestsOpened, { id: chestId, at: now }];
+    const newWorldState = saveWorldState(kidId, ws);
+
+    appendLedgerEntry({
+      kidId,
+      sourceEventId: newId(`mm_chest_${chestId}`),
+      track: "chest",
+      amount: CONFIG.CHEST_REWARD_XP,
+      meta: { chestId },
+      createdAt: now,
+    });
+    const hero = recomputeHeroState(kidId);
+
+    return { written: true, worldState: newWorldState, hero, rewardXp: CONFIG.CHEST_REWARD_XP };
   }
 
   function solvePuzzle(kidId, puzzleId, now) {
@@ -607,14 +630,14 @@ export function createSavingsQuestStore(storage) {
 
   function recomputeHeroState(kidId) {
     const entries = ledgerForKid(kidId);
-    // "bonus" (Stage 5's manual parent-granted XP) and "quest" (Stage
-    // 6's daily/weekly quest rewards) both count toward level the same
-    // as "save" — each is XP for a real money behavior, just granted a
-    // different way than the formula-derived Save track. Everything
-    // about "level never decreases" still holds: both are only ever
-    // positive amounts.
+    // "bonus" (Stage 5's manual parent-granted XP), "quest" (Stage 6's
+    // daily/weekly quest rewards), and "chest" (a world-exploration
+    // reward) all count toward level the same as "save" — each is XP
+    // for a real behavior worth rewarding, just granted a different
+    // way than the formula-derived Save track. Everything about "level
+    // never decreases" still holds: all three are only ever positive.
     const saveXpTotal = entries
-      .filter((e) => e.track === "save" || e.track === "bonus" || e.track === "quest")
+      .filter((e) => e.track === "save" || e.track === "bonus" || e.track === "quest" || e.track === "chest")
       .reduce((sum, e) => sum + e.amount, 0);
     const heartTotal = entries
       .filter((e) => e.track === "heart")

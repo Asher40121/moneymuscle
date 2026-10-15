@@ -349,6 +349,17 @@ export function createUi({ store, catalogs }) {
     return window.computeTotals && window.roundsForKid ? window.computeTotals(window.roundsForKid(kidId)).save : 0;
   }
 
+  // Dollars saved toward the kid's CURRENT goal specifically — resets
+  // to $0 when a completed goal is cleared and a new one is set,
+  // unlike kidSaveTotal's lifetime running total (which Family Quest
+  // deliberately keeps using below, since that's not tied to any one
+  // goal). Falls back to the lifetime total if the bridging function
+  // isn't available for some reason, same defensive pattern as every
+  // other window.* call in this file.
+  function kidGoalProgress(kidId) {
+    return window.getGoalProgress ? window.getGoalProgress(kidId) : kidSaveTotal(kidId);
+  }
+
   // Stage 5: Family Quest progress is the same number for every kid in
   // the family (sum of everyone's real Save total), so it's computed
   // once here and folded into every kid's heroContext — unlocks.js then
@@ -381,7 +392,7 @@ export function createUi({ store, catalogs }) {
       streakWeeks,
       completedGoalsCount,
       goalTarget: goal ? goal.target : null,
-      currentSaveTotal: kidSaveTotal(kidId),
+      currentSaveTotal: kidGoalProgress(kidId),
       ...buildFamilyQuestContext(),
     };
   }
@@ -758,7 +769,7 @@ export function createUi({ store, catalogs }) {
     const sinceIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const hero = store.getHero(kidId);
     const goal = window.getGoal ? window.getGoal(kidId) : null;
-    const saveTotal = kidSaveTotal(kidId);
+    const saveTotal = kidGoalProgress(kidId);
     const goalPct = goal && goal.target > 0 ? Math.min(100, Math.round((saveTotal / goal.target) * 100)) : null;
 
     const recentUnlocks = store
@@ -956,7 +967,21 @@ export function createUi({ store, catalogs }) {
       container.querySelector("#sqApproveGoalBtn").addEventListener("click", () => {
         if (window.setGoal) window.setGoal(kidId, proposal.name, proposal.target);
         store.resolveGoalProposal(kidId, "approved");
-        renderParentPanel(container, kidId);
+        // Bug fix: window.setGoal() only writes the data — it doesn't
+        // re-render Money Muscle's own "Streak & Savings Goal" card,
+        // which has no idea anything changed until its own render
+        // cycle runs again. Calling renderParentView() (Money Muscle's
+        // own full Parent-view render, the same thing its own "Set
+        // Goal" button already triggers after a manual setGoal) makes
+        // that card pick up the kid's approved goal immediately instead
+        // of still saying "No savings goal set yet." until the next
+        // tab switch. It also re-renders this very panel, via the
+        // window.SavingsQuest.renderParentPanel() call already built
+        // into that function — so the direct call below is a fallback
+        // for the (never-expected) case that global is missing, not a
+        // redundant double-render in the normal case.
+        if (window.renderParentView) window.renderParentView();
+        else renderParentPanel(container, kidId);
       });
       container.querySelector("#sqDeclineGoalBtn").addEventListener("click", () => {
         store.resolveGoalProposal(kidId, "declined");

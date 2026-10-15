@@ -105,3 +105,10 @@ export function canPlayNow({
   if (!canEnterRegion(staminaCharge, costPerEntry)) return { ok: false, reason: "no-charge" };
   return { ok: true, reason: null };
 }
+
+// A chest (or any other timed-reset interactable) is available if it's
+// never been opened, or if resetMs has elapsed since it last was.
+export function isResetAvailable(lastOpenedAt, now, resetMs) {
+  if (!lastOpenedAt) return true;
+  return new Date(now).getTime() - new Date(lastOpenedAt).getTime() >= resetMs;
+}

@@ -26,6 +26,7 @@ import {
   checkNeedsWantsSort,
   checkBossSequence,
   canPlayNow,
+  isResetAvailable,
 } from "./world-engine.js";
 import { CONFIG } from "./config.js";
 
@@ -231,14 +232,17 @@ function getRegionSceneClass() {
       const sprite = this.add.image(c.x, c.y, "blob");
       sprite.wanderTimer = 0;
       sprite.wanderVel = { x: 0, y: 0 };
+      sprite.bumpCooldown = 0; // ms until this creature can react again
       return sprite;
     });
 
     this.chestSprites = (this.opts.regionDef.chests || []).map((c) => {
-      const opened = this.opts.worldState.chestsOpened.some((e) => e.id === c.id);
-      const sprite = this.add.image(c.x, c.y, opened ? "chest-open" : "chest-closed");
+      const existing = this.opts.worldState.chestsOpened.find((e) => e.id === c.id);
+      const openedAt = existing ? existing.at : null;
+      const available = isResetAvailable(openedAt, new Date().toISOString(), CONFIG.CHEST_RESET_MS);
+      const sprite = this.add.image(c.x, c.y, available ? "chest-closed" : "chest-open");
       sprite.chestDef = c;
-      sprite.opened = opened;
+      sprite.openedAt = available ? null : openedAt;
       return sprite;
     });
 
@@ -325,7 +329,11 @@ function getRegionSceneClass() {
 
   interactables() {
     const list = [];
-    for (const c of this.chestSprites) if (!c.opened) list.push({ type: "chest", sprite: c, def: c.chestDef });
+    for (const c of this.chestSprites) {
+      if (isResetAvailable(c.openedAt, new Date().toISOString(), CONFIG.CHEST_RESET_MS)) {
+        list.push({ type: "chest", sprite: c, def: c.chestDef });
+      }
+    }
     if (this.npcSprite) list.push({ type: "npc", sprite: this.npcSprite, def: this.npcSprite.npcDef });
     if (this.puzzleSprite) list.push({ type: "puzzle", sprite: this.puzzleSprite, def: this.puzzleSprite.puzzleDef });
     if (this.bossSprite && !this.bossSprite.defeated) list.push({ type: "boss", sprite: this.bossSprite, def: this.bossSprite.bossDef });
@@ -370,6 +378,17 @@ function getRegionSceneClass() {
       this.hero.y = Phaser.Math.Clamp(this.hero.y + (vy / len) * speed, this.worldBounds.minY, this.worldBounds.maxY);
     }
 
+    // A chest's texture flips back to closed the moment its reset
+    // window elapses, even if the hero never walks away and back —
+    // the kid shouldn't have to leave and return just to see it's
+    // ready again.
+    for (const chest of this.chestSprites) {
+      if (chest.openedAt && isResetAvailable(chest.openedAt, new Date().toISOString(), CONFIG.CHEST_RESET_MS)) {
+        chest.openedAt = null;
+        chest.setTexture("chest-closed");
+      }
+    }
+
     for (const creature of this.creatureSprites) {
       creature.wanderTimer -= delta;
       if (creature.wanderTimer <= 0) {
@@ -380,6 +399,29 @@ function getRegionSceneClass() {
       const speed = (CONFIG.WORLD_CREATURE_SPEED * delta) / 1000;
       creature.x = Phaser.Math.Clamp(creature.x + creature.wanderVel.x * speed, this.worldBounds.minX, this.worldBounds.maxX);
       creature.y = Phaser.Math.Clamp(creature.y + creature.wanderVel.y * speed, this.worldBounds.minY, this.worldBounds.maxY);
+
+      // Creatures are pure flavor — never fought, never defeated (the
+      // brief's non-violent rule applies to them too, not just bosses).
+      // But standing silent when bumped read as broken, not peaceful,
+      // so a friendly little hop + chime acknowledges the bump instead.
+      if (creature.bumpCooldown > 0) creature.bumpCooldown -= delta;
+      if (
+        creature.bumpCooldown <= 0 &&
+        Phaser.Math.Distance.Between(this.hero.x, this.hero.y, creature.x, creature.y) < 30
+      ) {
+        creature.bumpCooldown = CONFIG.CREATURE_BUMP_RESET_MS;
+        playBeep(1320, 120, this.opts.isMuted(), "A friendly critter says hi!");
+        const motionOn = document.documentElement.getAttribute("data-sq-motion") !== "off";
+        if (motionOn) {
+          this.tweens.add({
+            targets: creature,
+            y: creature.y - 12,
+            duration: 140,
+            yoyo: true,
+            ease: "Quad.easeOut",
+          });
+        }
+      }
     }
 
     let closest = null;
@@ -412,7 +454,7 @@ function getRegionSceneClass() {
   markChestOpened(chestDef) {
     const sprite = this.chestSprites.find((c) => c.chestDef.id === chestDef.id);
     if (sprite) {
-      sprite.opened = true;
+      sprite.openedAt = new Date().toISOString();
       sprite.setTexture("chest-open");
     }
   }
@@ -661,6 +703,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       bossDef,
       bossUnlocked,
       landmarkStage,
+      isMuted, // update()'s creature-bump reaction needs this; isMuted() itself lives outside the Scene class
       onNearbyChange: (nearby) => {
         if (!nearby) {
           interactBtn.disabled = true;
@@ -683,8 +726,9 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       onOpenChest: (chestDef, sprite) => {
         const result = store.openChest(kidId, chestDef.id, new Date().toISOString());
         if (result.written) {
-          playBeep(880, 180, isMuted(), "Chest opened!");
-          sceneInstance.markChestOpened(chestDef);
+          playBeep(880, 180, isMuted(), `Found a treasure! +${result.rewardXp} XP`);
+          getRegionScene()?.markChestOpened(chestDef);
+          showChestRewardOverlay(result.rewardXp);
         }
       },
       onTalkToNpc: (npcDefArg) => showNpcDialogue(npcDefArg),
@@ -692,13 +736,13 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
         showPuzzleModal(puzzleDefArg, () => {
           store.solvePuzzle(kidId, puzzleDefArg.id, new Date().toISOString());
           playBeep(1046, 220, isMuted(), "Puzzle solved!");
-          sceneInstance.markPuzzleSolved();
+          getRegionScene()?.markPuzzleSolved();
         }),
       onOpenBoss: (bossDefArg) =>
         showBossModal(bossDefArg, () => {
           store.defeatBoss(kidId, bossDefArg.id, new Date().toISOString());
           playBeep(660, 300, isMuted(), "Boss calmed!");
-          sceneInstance.markBossDefeated();
+          getRegionScene()?.markBossDefeated();
         }),
       onLandmark: () => {
         if (landmarkStage >= CONFIG.MILESTONE_THRESHOLDS.length) {
@@ -715,7 +759,6 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
     // practice: any unexpected engine construction error, on any
     // device, drops back to the plain-DOM Hero Hub instead of crashing
     // the Kid panel.
-    let sceneInstance;
     try {
       game = new Phaser.Game({
         type: Phaser.AUTO,
@@ -725,17 +768,26 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
         backgroundColor: "#bfe6a8",
         scene: [getRegionSceneClass()],
       });
-      // getScene() returns the same Scene instance for a given key for
-      // the game's whole lifetime, created as soon as it's added via
-      // config — safe to grab immediately, before boot finishes.
-      sceneInstance = game.scene.getScene("region");
     } catch (err) {
       console.error("Savings Quest: the game engine failed to start, falling back to Hero Hub.", err);
       game = null;
       renderHeroHub(container, kidId);
       return;
     }
-    interactBtn.addEventListener("click", () => sceneInstance.handleInteract());
+    // Bug fix: game.scene.getScene("region") immediately after `new
+    // Phaser.Game(...)` returns null — Phaser doesn't register scenes
+    // from the config array into the SceneManager synchronously during
+    // construction, it queues them for its own boot sequence. Caching
+    // that null reference here (as an earlier version of this file
+    // did) meant every interact click threw "Cannot read properties of
+    // null (reading 'handleInteract')." Looking it up fresh at the
+    // moment it's actually needed sidesteps the timing entirely — by
+    // the time a click can happen, update() has already been running
+    // on the real scene instance for a while.
+    function getRegionScene() {
+      return game ? game.scene.getScene("region") : null;
+    }
+    interactBtn.addEventListener("click", () => getRegionScene()?.handleInteract());
 
     // The config array above auto-starts "region" with no data (a
     // harmless no-op thanks to the opts guard in init()/create()/
@@ -842,12 +894,13 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
               : ""
           }
           ${(regionDef.chests || [])
-            .map(
-              (c) =>
-                `<button type="button" class="sq-decline-btn" data-action="chest" data-chest-id="${c.id}">
-                  ${worldState.chestsOpened.some((e) => e.id === c.id) ? "Chest opened ✓" : "Open a chest"}
-                </button>`,
-            )
+            .map((c) => {
+              const existing = worldState.chestsOpened.find((e) => e.id === c.id);
+              const available = isResetAvailable(existing ? existing.at : null, new Date().toISOString(), CONFIG.CHEST_RESET_MS);
+              return `<button type="button" class="sq-decline-btn" data-action="chest" data-chest-id="${c.id}">
+                  ${available ? "Open a chest" : "Chest opened ✓"}
+                </button>`;
+            })
             .join("")}
           ${
             bossDef
@@ -871,7 +924,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
         b.addEventListener("click", () => {
           if (store.getWorldState(kidId).puzzlesSolved.some((e) => e.id === puzzleDef.id)) return;
           showPuzzleModal(puzzleDef, () => {
-            store.solvePuzzle(kidId, puzzleDef.id);
+            store.solvePuzzle(kidId, puzzleDef.id, new Date().toISOString());
             playBeep(1046, 220, isMuted(), "Puzzle solved!");
             renderHeroHub(container, kidId);
           });
@@ -880,8 +933,11 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       card.querySelectorAll("[data-action='chest']").forEach((b) =>
         b.addEventListener("click", () => {
           const chestId = b.dataset.chestId;
-          const result = store.openChest(kidId, chestId);
-          if (result.written) playBeep(880, 180, isMuted(), "Chest opened!");
+          const result = store.openChest(kidId, chestId, new Date().toISOString());
+          if (result.written) {
+            playBeep(880, 180, isMuted(), `Found a treasure! +${result.rewardXp} XP`);
+            showChestRewardOverlay(result.rewardXp);
+          }
           renderHeroHub(container, kidId);
         }),
       );
@@ -889,7 +945,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
         b.addEventListener("click", () => {
           if (store.getWorldState(kidId).bossesDefeated.some((e) => e.id === bossDef.id)) return;
           showBossModal(bossDef, () => {
-            store.defeatBoss(kidId, bossDef.id);
+            store.defeatBoss(kidId, bossDef.id, new Date().toISOString());
             playBeep(660, 300, isMuted(), "Boss calmed!");
             renderHeroHub(container, kidId);
           });
@@ -1095,6 +1151,27 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
     }
 
     showFlash();
+  }
+
+  // Bug fix: opening a chest used to only play a beep with no visible
+  // confirmation of what, if anything, was actually received — which
+  // looked exactly like nothing happened. This makes the reward
+  // impossible to miss, same visual weight as a level-up or quest.
+  function showChestRewardOverlay(rewardXp) {
+    const overlay = baseOverlay(
+      `
+      <div class="sq-levelup-card">
+        <div style="font-size:3rem;" aria-hidden="true">🎁</div>
+        <h2>You found a treasure!</h2>
+        <p>+${rewardXp} XP</p>
+        <button type="button" class="sq-levelup-done-btn">Nice!</button>
+      </div>
+    `,
+      `You found a treasure: +${rewardXp} XP`,
+    );
+    const btn = overlay.querySelector("button");
+    btn.addEventListener("click", () => overlay.remove());
+    btn.focus();
   }
 
   function showLandmarkProgress(stage) {

@@ -1277,6 +1277,11 @@
 
           <p class="instructions-section-title">🤝 Then hand it over</p>
           <p>Once you've given money (or paid for a chore), switch to the <strong>🧒 Kid</strong> tab above and hand your child the device. They'll see how much they have and decide how to split it between Give, Save, and Spend themselves — that's the whole exercise. When they're done, come back to the Parent tab to see their totals, past rounds, and streak.</p>
+
+          <p class="instructions-section-title">🗡️ New: Savings Quest</p>
+          <p>Turn on the <strong>Savings Quest</strong> card below to add an optional game for your kid. Their hero levels up, earns gear, and explores a world — all powered by their real saving, never by spending money or tapping a buy button. It only ever watches what already happens in Give Money and the chore board; it can't move or request a dollar on its own.</p>
+          <p>As your kid saves, their hero gains XP and unlocks new gear, skills, and regions to explore, each with a character who teaches one simple money idea (saving a little often, needs vs. wants, budgeting, and more). Their real savings goal even appears inside the game as a landmark that builds as they get closer to it.</p>
+          <p>You stay in control the whole time: turn the game on or off per child, set a daily play-time limit or quiet hours, choose how fast XP builds, and send a "cheer" or a Bonus XP note for a good money decision you want to recognize. Nothing here changes how Give, Save, and Spend already work.</p>
         </div>
       </div>
 
@@ -1436,9 +1441,10 @@
           <button class="done-btn" id="goalCelebrationDoneBtn">Woohoo! 🎉</button>
         </div>
 
+        <div id="kidChoresArea"></div>
+
         <div id="kidNoMoney" style="display:none;">
           <div class="no-money-note" id="kidNoMoneyNote">🙋 Ask your parent to give you some money to split!</div>
-          <div id="kidChoresArea"></div>
         </div>
 
         <div id="kidSplitArea" style="display:none;">
@@ -1661,10 +1667,32 @@
       return goals[kidId] || null;
     }
 
+    // startingSaveTotal is the kid's lifetime Save total at the moment
+    // THIS goal was first set — "saved toward this goal" is computed
+    // relative to that baseline (see getGoalProgress), not the raw
+    // lifetime total, so progress correctly starts back at $0 after a
+    // completed goal is cleared and a new one is set. Editing an
+    // EXISTING goal's name/target (the "Update Goal" button) must not
+    // reset progress, so the baseline only gets (re)captured when
+    // there's no goal yet — never overwritten on an edit.
     function setGoal(kidId, name, target) {
       const goals = loadGoals();
-      goals[kidId] = { name, target };
+      const existing = goals[kidId];
+      const startingSaveTotal = existing ? existing.startingSaveTotal : computeTotals(roundsForKid(kidId)).save;
+      goals[kidId] = { name, target, startingSaveTotal };
       saveGoals(goals);
+    }
+
+    // Dollars saved toward the kid's CURRENT goal specifically — not
+    // their lifetime Save total, which never resets. A goal set before
+    // this existed has no startingSaveTotal, so it defaults to 0
+    // (equivalent to the old, lifetime-total behavior) rather than
+    // jumping an in-progress goal's displayed progress around.
+    function getGoalProgress(kidId) {
+      const goal = getGoal(kidId);
+      if (!goal) return 0;
+      const lifetimeSave = computeTotals(roundsForKid(kidId)).save;
+      return Math.max(0, lifetimeSave - (goal.startingSaveTotal || 0));
     }
 
     function clearGoal(kidId) {
@@ -1691,6 +1719,25 @@
 
     function getCompletedGoalsFor(kidId) {
       return loadCompletedGoals().filter(g => g.kidId === kidId);
+    }
+
+    // Normally a goal is marked complete the instant a split crosses
+    // its target (see the split-completion handler below). This is the
+    // safety net for every OTHER way progress can end up already at or
+    // past target without that moment ever firing — e.g. a goal set
+    // before per-goal progress baselines existed, whose displayed
+    // progress could get stuck above 100% forever with no completion
+    // ever recorded; or a parent using "Edit goal" to lower an existing
+    // target below progress already made. Safe to call on every
+    // render: it's a no-op once the goal's actually been cleared.
+    function checkAndCompleteGoalIfReached(kidId) {
+      const goal = getGoal(kidId);
+      if (!goal) return null;
+      if (getGoalProgress(kidId) < goal.target) return null;
+      const completedGoal = { name: goal.name, target: goal.target };
+      addCompletedGoal(kidId, completedGoal);
+      clearGoal(kidId);
+      return completedGoal;
     }
 
     // ---------- Chores (per kid) ----------
@@ -1947,7 +1994,7 @@
     // ---------- Goal display (shared markup builder) ----------
     function renderGoalBlock(container, kidId, editable) {
       const goal = getGoal(kidId);
-      const saveTotal = computeTotals(roundsForKid(kidId)).save;
+      const saveTotal = getGoalProgress(kidId);
 
       if (!goal) {
         container.innerHTML = `
@@ -2297,6 +2344,7 @@
       giveCard.style.display = 'block';
       streakGoalCard.style.display = 'block';
       savingsWinsCard.style.display = 'block';
+      checkAndCompleteGoalIfReached(activeId);
       renderSavingsWinsList(parentSavingsWinsList, activeId);
 
       const activeKid = kids.find(k => k.id === activeId);
@@ -2491,7 +2539,7 @@
       const chores = getChoresFor(kidId);
 
       kidNoMoneyNote.textContent = chores.length > 0
-        ? "🙋 No money to split right now — but you can do a chore below to earn some!"
+        ? "🙋 No money to split right now — but you can do a chore above to earn some!"
         : "🙋 Ask your parent to give you some money to split!";
 
       if (chores.length === 0) {
@@ -2696,6 +2744,16 @@
       kidNoKids.style.display = 'none';
       kidHasKidArea.style.display = 'block';
 
+      // Safety net for a goal that's already at/past target but never
+      // got the live "just crossed it" moment (see
+      // checkAndCompleteGoalIfReached) — catch it here too, so the kid
+      // still gets the goal-achieved celebration instead of the goal
+      // just quietly vanishing the next time a parent looks at it.
+      if (!celebrating && !goalCelebrating) {
+        const justCompleted = checkAndCompleteGoalIfReached(activeId);
+        if (justCompleted) goalCelebrating = justCompleted;
+      }
+
       const rounds = roundsForKid(activeId);
       const totals = computeTotals(rounds);
       kidTotalSaveEl.textContent = '$' + totals.save;
@@ -2716,7 +2774,15 @@
       kidSavingsWinsCard.style.display = wins.length > 0 ? 'block' : 'none';
       if (wins.length > 0) renderSavingsWinsList(kidSavingsWinsList, activeId);
 
+      // Chores are always available, whether or not there's a pending
+      // amount waiting to be split — a kid shouldn't have to finish an
+      // in-progress split before they can see (or do) a chore. Hidden
+      // only during the two full-screen celebration takeovers, same as
+      // every other card on this view.
+      renderKidChores(activeId);
+
       if (celebrating) {
+        kidChoresArea.style.display = 'none';
         kidNoMoney.style.display = 'none';
         kidSplitArea.style.display = 'none';
         goalCelebrationScreen.style.display = 'none';
@@ -2725,8 +2791,10 @@
       }
 
       kidCelebration.style.display = 'none';
+      kidChoresArea.style.display = 'block';
 
       if (goalCelebrating) {
+        kidChoresArea.style.display = 'none';
         kidNoMoney.style.display = 'none';
         kidSplitArea.style.display = 'none';
         goalCelebrationScreen.style.display = 'block';
@@ -2750,7 +2818,6 @@
       if (currentAmount === null) {
         kidNoMoney.style.display = 'block';
         kidSplitArea.style.display = 'none';
-        renderKidChores(activeId);
         return;
       }
 
@@ -2780,7 +2847,7 @@
         saveGoalMini.innerHTML = '';
         return;
       }
-      const saveTotal = computeTotals(roundsForKid(kidId)).save;
+      const saveTotal = getGoalProgress(kidId);
       const pct = Math.min(100, (saveTotal / goal.target) * 100);
       const complete = saveTotal >= goal.target;
       saveGoalMini.innerHTML = `
@@ -2849,7 +2916,9 @@
         messageEl.innerHTML = '';
 
         const goal = getGoal(activeId);
-        const priorSaveTotal = computeTotals(roundsForKid(activeId)).save;
+        // Goal-relative progress (resets to $0 at a fresh goal, not
+        // the kid's lifetime Save total) — see setGoal/getGoalProgress.
+        const priorSaveTotal = getGoalProgress(activeId);
 
         const round = {
           id: Date.now(),

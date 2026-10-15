@@ -108,6 +108,29 @@ export const CONFIG = {
   STAMINA_CHARGE_PER_CHORE_APPROVED: 1,
 
   // ---------------------------------------------------------------------
+  // CHEST REWARD — a flat, small XP reward for opening a chest. Counts
+  // toward level the same way Bonus XP and quest rewards do. A chest
+  // resets (becomes openable, and re-grants the reward) once
+  // CHEST_RESET_MS has passed since it was last opened — explicitly
+  // requested, so chests stay something to come back to rather than a
+  // one-time "seen it" checkbox. Worth knowing: this is a deliberate,
+  // explicit exception to this project's usual anti-farming stance —
+  // sitting on one chest and reopening it every minute is a real,
+  // small, repeatable XP source. It's a flat +10 regardless of real
+  // money, so it can never touch rule #1/#2, but it's not bounded the
+  // way Save XP's anti-farming logic is.
+  // ---------------------------------------------------------------------
+  CHEST_REWARD_XP: 10,
+  CHEST_RESET_MS: 60000,
+
+  // ---------------------------------------------------------------------
+  // CREATURE BUMP — how long before a decorative creature will react
+  // again after being bumped (a cosmetic chime/hop, no reward — see
+  // world.js). Purely a pacing choice, not a farming concern.
+  // ---------------------------------------------------------------------
+  CREATURE_BUMP_RESET_MS: 60000,
+
+  // ---------------------------------------------------------------------
   // WORLD — tuning for the Stage 4 open-world vertical slice.
   // ---------------------------------------------------------------------
   WORLD_HERO_SPEED: 160, // px/sec

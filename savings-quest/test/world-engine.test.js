@@ -12,6 +12,7 @@ import {
   isWithinQuietHours,
   dailyLimitReached,
   canPlayNow,
+  isResetAvailable,
 } from "../world-engine.js";
 
 test("canEnterRegion: enough charge vs. not enough", () => {
@@ -163,4 +164,26 @@ test("canPlayNow: no stamina charge blocks play", () => {
 
 test("canPlayNow: everything clear", () => {
   assert.deepEqual(canPlayNow(basePlayArgs), { ok: true, reason: null });
+});
+
+test("isResetAvailable: never opened is always available", () => {
+  assert.equal(isResetAvailable(null, "2026-10-14T12:00:00.000Z", 60000), true);
+});
+
+test("isResetAvailable: not enough time has passed yet", () => {
+  assert.equal(
+    isResetAvailable("2026-10-14T12:00:00.000Z", "2026-10-14T12:00:59.000Z", 60000),
+    false,
+  );
+});
+
+test("isResetAvailable: exactly at and past the reset window", () => {
+  assert.equal(
+    isResetAvailable("2026-10-14T12:00:00.000Z", "2026-10-14T12:01:00.000Z", 60000),
+    true,
+  );
+  assert.equal(
+    isResetAvailable("2026-10-14T12:00:00.000Z", "2026-10-14T12:05:00.000Z", 60000),
+    true,
+  );
 });

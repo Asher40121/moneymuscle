@@ -274,6 +274,46 @@ test("markRegionDiscovered, openChest, solvePuzzle, and defeatBoss are each idem
   assert.deepEqual(ws.bossesDefeated, [{ id: "impulse_imp", at }]);
 });
 
+test("Bug fix: opening a chest actually grants XP once, not just a silent 'opened' flag", () => {
+  const store = freshStore();
+  const at = "2026-10-14T00:00:00.000Z";
+
+  const first = store.openChest("kid-1", "meadow_chest_1", at);
+  assert.equal(first.written, true);
+  assert.equal(first.rewardXp, 10); // CONFIG.CHEST_REWARD_XP
+  assert.equal(first.hero.totalXp, 10);
+  assert.equal(store.getHero("kid-1").totalXp, 10);
+
+  // Replaying the same chest must not grant XP a second time.
+  const replay = store.openChest("kid-1", "meadow_chest_1", at);
+  assert.equal(replay.written, false);
+  assert.equal(replay.rewardXp, 0);
+  assert.equal(store.getHero("kid-1").totalXp, 10);
+
+  // A different chest grants again.
+  const second = store.openChest("kid-1", "meadow_chest_2", at);
+  assert.equal(second.written, true);
+  assert.equal(store.getHero("kid-1").totalXp, 20);
+});
+
+test("Chests reset and re-grant their reward once CONFIG.CHEST_RESET_MS has passed", () => {
+  const store = freshStore();
+  const openedAt = "2026-10-14T12:00:00.000Z";
+  store.openChest("kid-1", "meadow_chest_1", openedAt);
+  assert.equal(store.getHero("kid-1").totalXp, 10);
+
+  // 30 seconds later — still within the 60s reset window, blocked.
+  const tooSoon = store.openChest("kid-1", "meadow_chest_1", "2026-10-14T12:00:30.000Z");
+  assert.equal(tooSoon.written, false);
+  assert.equal(store.getHero("kid-1").totalXp, 10);
+
+  // 61 seconds later — reset window has elapsed, grants again.
+  const reopened = store.openChest("kid-1", "meadow_chest_1", "2026-10-14T12:01:01.000Z");
+  assert.equal(reopened.written, true);
+  assert.equal(reopened.rewardXp, 10);
+  assert.equal(store.getHero("kid-1").totalXp, 20);
+});
+
 test("getWorldState normalizes a pre-Stage-5 plain-string id list to {id, at: null}", () => {
   const storage = createMemoryStorage();
   storage.setItem(

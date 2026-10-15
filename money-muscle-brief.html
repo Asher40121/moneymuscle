@@ -583,7 +583,44 @@
 </section>
 
 <section>
-  <div class="section-head"><span class="section-num">05</span><h2>From insight to feature</h2></div>
+  <div class="section-head"><span class="section-num">05</span><h2>Savings Quest — the game layer</h2></div>
+  <p class="lede">A kid-side game where a hero gets stronger as the family's real saving habit does, built behind its own feature flag so nothing here changes how Money Muscle works until a parent opts in.</p>
+  <p>The core loop stays exactly what Section 04 describes — give, split, chore, goal. Savings Quest never touches that loop; it only listens to it. Every dollar moved into Save, every chore paid, and every goal reached writes to an XP ledger that a hero's level, gear, and world are derived from. The game is read-only with respect to money: it cannot move, approve, or request a single dollar, and spending is never punished.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Layer</th><th>What's in it</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="signal">Progression</td>
+          <td>A hero that levels up from real Save activity, with a weekly streak bonus and a free "streak freeze" that forgives one missed week instead of resetting it.</td>
+        </tr>
+        <tr>
+          <td class="signal">Gear &amp; skills</td>
+          <td>A 33-item catalog (weapons, armor, companions, cosmetics) and a 9-skill tree, every unlock shown in advance with its exact requirement — no surprise gates.</td>
+        </tr>
+        <tr>
+          <td class="signal">Open world</td>
+          <td>Five explorable regions, each with one NPC teaching a single money concept (saving, needs vs. wants, budgeting, emergency funds, patience), a non-violent "calm the monster" boss, and the family's real savings goal rendered as a landmark that visibly builds as progress does.</td>
+        </tr>
+        <tr>
+          <td class="signal">Parent controls</td>
+          <td>A weekly progress dashboard, per-child play limits and quiet hours, an XP-rate preset, manual "Bonus XP" for a good decision a parent wants to recognize, and a shared Family Quest with encouragement messages.</td>
+        </tr>
+        <tr>
+          <td class="signal">Safety by design</td>
+          <td>No ads, trackers, stranger contact, public leaderboards, or in-game purchases. Reduced-motion and colorblind-safe by default, with audio captioned for every sound effect.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tag-row"><span class="tag flag">Behind a feature flag</span><span class="tag shipped">Prototype complete</span></div>
+  <p>Like the rest of this build, Savings Quest runs entirely on local device storage today — the same known limitation Section 09 already calls out for the core product, not a new one this feature introduces. Full build notes, architecture, and a stage-by-stage changelog live alongside the code.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="section-num">06</span><h2>From insight to feature</h2></div>
   <p class="lede">Each shipped feature traces back to a specific complaint from the research, not a hypothetical one.</p>
   <div class="table-wrap">
     <table>
@@ -627,7 +664,7 @@
 </section>
 
 <section>
-  <div class="section-head"><span class="section-num">06</span><h2>How success gets measured</h2></div>
+  <div class="section-head"><span class="section-num">07</span><h2>How success gets measured</h2></div>
   <p class="lede">The prototype has no instrumentation and no defined success metric today. This is what I would track before calling the feature validated, framed as targets to test rather than results already in hand.</p>
   <div class="kpi-grid">
     <div class="kpi-card north-star">
@@ -665,29 +702,29 @@
 </section>
 
 <section>
-  <div class="section-head"><span class="section-num">07</span><h2>Why this matters to the business</h2></div>
+  <div class="section-head"><span class="section-num">08</span><h2>Why this matters to the business</h2></div>
   <p>The Financial Peace Kids research already puts a number on the underlying opportunity: a stated goal of growing that product line's revenue 25%, from $109,000 to $136,250 a year. Money Muscle does not compete with that goal, it de-risks it. A digital feature carries almost none of the fulfillment cost of a physical kit, and reaches every EveryDollar household with kids, not only the ones who bought a box.</p>
   <p>The stronger case is retention. A family with young kids stays on a budgeting product longer when the product earns a place in the household's routine beyond the parents' own budget. A chore board that pays out through EveryDollar money gives a family a daily reason to open the app that has nothing to do with reconciling a transaction.</p>
 </section>
 
 <section>
-  <div class="section-head"><span class="section-num">08</span><h2>Where this plugs into EveryDollar</h2></div>
+  <div class="section-head"><span class="section-num">09</span><h2>Where this plugs into EveryDollar</h2></div>
   <p>The prototype runs on local device storage, which is the right way to prove the interaction loop and the wrong foundation to ship on. Folding this into EveryDollar's existing account system does three things at once: it fixes the parent-and-kid-on-separate-devices gap that local storage cannot solve, it lets a real transaction on the kids-commission budget line trigger the split automatically instead of the parent re-typing an amount, and it lets a Save decision point at a real EveryDollar Fund instead of a second, disconnected goal tracker.</p>
 </section>
 
 <section>
-  <div class="section-head"><span class="section-num">09</span><h2>Trust and privacy</h2></div>
+  <div class="section-head"><span class="section-num">10</span><h2>Trust and privacy</h2></div>
   <p>This product touches a child's photos and activity, which makes privacy a launch gate, not a polish item. Before any real household uses this: a COPPA-aligned consent flow that a parent, not the child, completes; account creation gated behind the parent's own EveryDollar login rather than a separate child sign-up; no third-party analytics or advertising code touching child data; and a clear, working delete path for a child's photos and history.</p>
   <p>None of this exists in the prototype today. It was deliberately deferred so the interaction loop stayed the thing being tested, not a compliance exercise. It is the first thing that has to be built before this leaves prototype status.</p>
 </section>
 
 <section>
-  <div class="section-head"><span class="section-num">10</span><h2>How I would validate it</h2></div>
+  <div class="section-head"><span class="section-num">11</span><h2>How I would validate it</h2></div>
   <p>Everything here was built against secondary research: two existing rounds of customer discovery, not a new study commissioned for this feature. Before trusting it further, I would run five to eight moderated sessions with current EveryDollar parents who already have a kids or commission line, watching the give-split-chore loop rather than asking about it. Then a four-week opt-in beta with twenty to thirty households, instrumented against the metrics in Section 06, before any wider rollout. That beta is also where I would re-test the teen age-band assumption directly instead of guessing at it.</p>
 </section>
 
 <section>
-  <div class="section-head"><span class="section-num">11</span><h2>Deliberate tradeoffs</h2></div>
+  <div class="section-head"><span class="section-num">12</span><h2>Deliberate tradeoffs</h2></div>
   <p class="lede">A few decisions here were made on purpose, not by accident.</p>
   <ul class="cut-list">
     <li><strong>Cut a separate teen experience.</strong> Both research sets ask for one, but shipping it without testing the assumption first would be a guess wearing a feature's clothes.</li>
@@ -698,7 +735,7 @@
 </section>
 
 <section>
-  <div class="section-head"><span class="section-num">12</span><h2>Rollout</h2></div>
+  <div class="section-head"><span class="section-num">13</span><h2>Rollout</h2></div>
   <ul class="phase-list">
     <li class="phase-item">
       <span class="phase-tag">Phase 1</span>
