@@ -609,6 +609,24 @@
   margin-top: 8px;
 }
 
+/* ---------- Stage 5: Parent Experience ---------- */
+
+.sq-banner-card {
+  background: var(--mm-amber-bg);
+  border: 2px dashed var(--mm-amber);
+}
+
+.sq-banner-card strong {
+  color: var(--mm-amber-dark);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.sq-banner-card p {
+  color: var(--mm-gray-90);
+  margin: 0 0 10px;
+}
+
 /* ---------- Stage 4: Open World v1 ---------- */
 
 .sq-world-gate-hint {

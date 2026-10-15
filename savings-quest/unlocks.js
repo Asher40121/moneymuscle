@@ -13,7 +13,13 @@
 //     completedGoalsCount: number,
 //     goalTarget: number | null,       // active goal's dollar target, if any
 //     currentSaveTotal: number,        // kid's real cumulative Save $, from Money Muscle
+//     familyQuestProgress: number,     // Stage 5: sum of every kid's real Save $ (optional)
+//     familyQuestTarget: number | null,// Stage 5: the parent-set family-wide target (optional)
 //   }
+// familyQuestProgress/Target are the same for every kid in the family
+// (computed once, by ui.js, by summing across all kids) — included here
+// so a family-wide unlock can reuse the exact same milestone-style math
+// as an individual goal's.
 
 export function isItemUnlocked(item, heroContext) {
   const { type, value } = item.unlock;
@@ -27,6 +33,9 @@ export function isItemUnlocked(item, heroContext) {
     case "milestone":
       if (!heroContext.goalTarget) return false;
       return heroContext.currentSaveTotal >= value * heroContext.goalTarget;
+    case "familyQuest":
+      if (!heroContext.familyQuestTarget) return false;
+      return heroContext.familyQuestProgress >= value * heroContext.familyQuestTarget;
     default:
       return false;
   }
@@ -62,6 +71,16 @@ export function describeUnlockRequirement(item, heroContext) {
     const remaining = Math.max(0, Math.round(neededDollars - heroContext.currentSaveTotal));
     if (remaining === 0) return "Milestone met";
     return `Save $${remaining} more`;
+  }
+
+  if (type === "familyQuest") {
+    if (!heroContext.familyQuestTarget) {
+      return "Ask a parent to set a Family Quest goal";
+    }
+    const neededDollars = value * heroContext.familyQuestTarget;
+    const remaining = Math.max(0, Math.round(neededDollars - heroContext.familyQuestProgress));
+    if (remaining === 0) return "Family Quest complete";
+    return `Save $${remaining} more together as a family`;
   }
 
   return "Locked";

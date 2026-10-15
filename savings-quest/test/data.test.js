@@ -257,20 +257,43 @@ test("spendStaminaCharge clamps at 0 and recordDailyCheckIn is idempotent per ca
 
 test("markRegionDiscovered, openChest, solvePuzzle, and defeatBoss are each idempotent", () => {
   const store = freshStore();
-  store.markRegionDiscovered("kid-1", "meadow");
-  store.markRegionDiscovered("kid-1", "meadow"); // replayed
-  store.openChest("kid-1", "meadow_chest_1");
-  store.openChest("kid-1", "meadow_chest_1"); // replayed
-  store.solvePuzzle("kid-1", "coin_order_meadow");
-  store.solvePuzzle("kid-1", "coin_order_meadow"); // replayed
-  store.defeatBoss("kid-1", "impulse_imp");
-  store.defeatBoss("kid-1", "impulse_imp"); // replayed
+  const at = "2026-10-14T00:00:00.000Z";
+  store.markRegionDiscovered("kid-1", "meadow", at);
+  store.markRegionDiscovered("kid-1", "meadow", at); // replayed
+  store.openChest("kid-1", "meadow_chest_1", at);
+  store.openChest("kid-1", "meadow_chest_1", at); // replayed
+  store.solvePuzzle("kid-1", "coin_order_meadow", at);
+  store.solvePuzzle("kid-1", "coin_order_meadow", at); // replayed
+  store.defeatBoss("kid-1", "impulse_imp", at);
+  store.defeatBoss("kid-1", "impulse_imp", at); // replayed
 
   const ws = store.getWorldState("kid-1");
-  assert.deepEqual(ws.regionsDiscovered, ["meadow"]);
-  assert.deepEqual(ws.chestsOpened, ["meadow_chest_1"]);
-  assert.deepEqual(ws.puzzlesSolved, ["coin_order_meadow"]);
-  assert.deepEqual(ws.bossesDefeated, ["impulse_imp"]);
+  assert.deepEqual(ws.regionsDiscovered, [{ id: "meadow", at }]);
+  assert.deepEqual(ws.chestsOpened, [{ id: "meadow_chest_1", at }]);
+  assert.deepEqual(ws.puzzlesSolved, [{ id: "coin_order_meadow", at }]);
+  assert.deepEqual(ws.bossesDefeated, [{ id: "impulse_imp", at }]);
+});
+
+test("getWorldState normalizes a pre-Stage-5 plain-string id list to {id, at: null}", () => {
+  const storage = createMemoryStorage();
+  storage.setItem(
+    "mm_sq_world_state",
+    JSON.stringify({ _v: 1, data: { "kid-1": { chestsOpened: ["meadow_chest_1"], puzzlesSolved: ["coin_order_meadow"] } } }),
+  );
+  const store = createSavingsQuestStore(storage);
+  const ws = store.getWorldState("kid-1");
+  assert.deepEqual(ws.chestsOpened, [{ id: "meadow_chest_1", at: null }]);
+  assert.deepEqual(ws.puzzlesSolved, [{ id: "coin_order_meadow", at: null }]);
+});
+
+test("getPuzzleSolvesSince excludes pre-Stage-5 solves with an unknown (null) time", () => {
+  const storage = createMemoryStorage();
+  storage.setItem(
+    "mm_sq_world_state",
+    JSON.stringify({ _v: 1, data: { "kid-1": { puzzlesSolved: ["coin_order_meadow"] } } }),
+  );
+  const store = createSavingsQuestStore(storage);
+  assert.deepEqual(store.getPuzzleSolvesSince("kid-1", "2026-01-01T00:00:00.000Z"), []);
 });
 
 test("getWorldState backfills new fields onto a record saved before Stage 4 existed", () => {
@@ -283,6 +306,94 @@ test("getWorldState backfills new fields onto a record saved before Stage 4 exis
   const ws = store.getWorldState("kid-1");
   assert.equal(ws.staminaCharge, 5); // CONFIG.STAMINA_CHARGE_MAX, backfilled
   assert.deepEqual(ws.chestsOpened, []);
+});
+
+test("getKidSettings returns sane defaults, and setKidSettings merges a partial patch", () => {
+  const store = freshStore();
+  const defaults = store.getKidSettings("kid-1");
+  assert.equal(defaults.enabled, true);
+  assert.equal(defaults.xpRatePreset, "standard");
+  assert.equal(defaults.dailyPlayMinutes, null);
+
+  store.setKidSettings("kid-1", { dailyPlayMinutes: 30 });
+  const patched = store.getKidSettings("kid-1");
+  assert.equal(patched.dailyPlayMinutes, 30);
+  assert.equal(patched.enabled, true); // untouched fields keep their defaults
+});
+
+test("recordSaveEvent applies the kid's XP-rate preset: Gentle > Standard > Challenging for the same save", () => {
+  function xpFor(preset) {
+    const store = freshStore();
+    store.setKidSettings("kid-1", { xpRatePreset: preset });
+    const { hero } = store.recordSaveEvent({
+      kidId: "kid-1",
+      amount: 10,
+      sourceEventId: "evt-1",
+      now: "2026-10-14T00:00:00.000Z",
+      priorDollarSaveTotal: 0,
+      newDollarSaveTotal: 10,
+      goalTarget: null,
+    });
+    return hero.totalXp;
+  }
+  const gentle = xpFor("gentle");
+  const standard = xpFor("standard");
+  const challenging = xpFor("challenging");
+  assert.ok(gentle > standard);
+  assert.ok(standard > challenging);
+});
+
+test("recordSaveEvent applies the parent-match bonus on top of the preset, as a game-only XP multiplier", () => {
+  const store = freshStore();
+  store.setKidSettings("kid-1", { parentMatchEnabled: true, parentMatchRate: 1.0 }); // double XP
+  const { hero } = store.recordSaveEvent({
+    kidId: "kid-1",
+    amount: 10,
+    sourceEventId: "evt-1",
+    now: "2026-10-14T00:00:00.000Z",
+    priorDollarSaveTotal: 0,
+    newDollarSaveTotal: 10,
+    goalTarget: null,
+  });
+  // Standard preset (1.0) * (1 + 1.0 match) = 2x the plain 100 XP baseline.
+  assert.equal(hero.totalXp, 200);
+});
+
+test("grantBonusXp counts toward level (via the 'bonus' track) and is visible as a note-bearing grant", () => {
+  const store = freshStore();
+  const { hero, grant } = store.grantBonusXp("kid-1", {
+    amount: 150,
+    note: "Great job comparing prices before buying!",
+    grantedAt: "2026-10-14T00:00:00.000Z",
+  });
+  assert.equal(hero.totalXp, 150);
+  assert.equal(hero.level, 1);
+  assert.equal(grant.note, "Great job comparing prices before buying!");
+  assert.equal(grant.seen, false);
+
+  const grants = store.getBonusGrants("kid-1");
+  assert.equal(grants.length, 1);
+  store.markBonusGrantSeen("kid-1", grant.id);
+  assert.equal(store.getBonusGrants("kid-1")[0].seen, true);
+});
+
+test("sendCheer / getCheers / markCheerSeen round-trip", () => {
+  const store = freshStore();
+  const cheer = store.sendCheer("kid-1", "So proud of your saving streak!", "2026-10-14T00:00:00.000Z");
+  assert.equal(store.getCheers("kid-1").length, 1);
+  assert.equal(store.getCheers("kid-1")[0].seen, false);
+  store.markCheerSeen("kid-1", cheer.id);
+  assert.equal(store.getCheers("kid-1")[0].seen, true);
+});
+
+test("recordPlaySession logs minutes, and getPlayMinutesSince/getPlayMinutesToday sum correctly", () => {
+  const store = freshStore();
+  store.recordPlaySession("kid-1", "2026-10-14T10:00:00.000Z", "2026-10-14T10:05:00.000Z"); // 5 min
+  store.recordPlaySession("kid-1", "2026-10-13T10:00:00.000Z", "2026-10-13T10:10:00.000Z"); // 10 min, yesterday
+  store.recordPlaySession("kid-2", "2026-10-14T10:00:00.000Z", "2026-10-14T10:20:00.000Z"); // another kid, excluded
+
+  assert.equal(store.getPlayMinutesToday("kid-1", "2026-10-14T23:00:00.000Z"), 5);
+  assert.equal(store.getPlayMinutesSince("kid-1", "2026-10-01T00:00:00.000Z"), 15);
 });
 
 test("getCurrentStreakWeeks reflects only what's actually on the ledger (a pure query)", () => {

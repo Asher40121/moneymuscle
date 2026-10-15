@@ -37,6 +37,8 @@ const KEYS = {
   questProgress: "mm_sq_quest_progress",
   pendingWithdrawals: "mm_sq_pending_withdrawals",
   goalProposals: "mm_sq_goal_proposals",
+  bonusGrants: "mm_sq_bonus_grants",
+  cheers: "mm_sq_cheers",
 };
 
 export function createMemoryStorage() {
@@ -136,6 +138,34 @@ export function createSavingsQuestStore(storage) {
     const settings = getGameSettings();
     settings.family.savingsQuestEnabled = Boolean(enabled);
     setGameSettings(settings);
+  }
+
+  // Stage 5: per-child controls, layered on top of the family-wide
+  // flag above (both must allow play — see events.js and
+  // world-engine.js's canPlayNow). Backfilled the same way getHero
+  // backfills new hero fields, so a kid with no settings yet still
+  // gets sane defaults instead of undefined.
+  function defaultKidSettings() {
+    return {
+      enabled: true,
+      dailyPlayMinutes: null, // null = no limit
+      quietHours: null, // { startHour, startMinute, endHour, endMinute } | null
+      xpRatePreset: CONFIG.DEFAULT_XP_RATE_PRESET, // 'gentle' | 'standard' | 'challenging'
+      parentMatchEnabled: false,
+      parentMatchRate: CONFIG.PARENT_MATCH_DEFAULT_RATE,
+    };
+  }
+
+  function getKidSettings(kidId) {
+    const settings = getGameSettings();
+    return { ...defaultKidSettings(), ...(settings.byKid[kidId] || {}) };
+  }
+
+  function setKidSettings(kidId, patch) {
+    const settings = getGameSettings();
+    settings.byKid[kidId] = { ...defaultKidSettings(), ...(settings.byKid[kidId] || {}), ...patch };
+    setGameSettings(settings);
+    return settings.byKid[kidId];
   }
 
   // --- hero ---
@@ -387,13 +417,56 @@ export function createSavingsQuestStore(storage) {
     };
   }
 
+  // Stage 4 originally stored these four lists as plain string[] ids.
+  // Stage 5's "what did my child learn this week" needs to know WHEN
+  // each one happened, not just whether — so they're now {id, at}[].
+  // This normalizes either shape transparently, the same backward-compat
+  // spirit as getHero backfilling new fields: old string entries get
+  // at: null (unknown time, simply excluded from "this week" math).
+  function normalizeIdList(list) {
+    return (list || []).map((entry) => (typeof entry === "string" ? { id: entry, at: null } : entry));
+  }
+
   function getPlaySessions() {
     return load(KEYS.playSessions, []);
   }
 
+  // Stage 5: logs one real play session (how long a World visit lasted)
+  // for the daily-limit check and the parent dashboard's "play time"
+  // stat. Written once, at session end — see world.js.
+  function recordPlaySession(kidId, startedAt, endedAt) {
+    const minutes = Math.max(0, (new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 60000);
+    const sessions = load(KEYS.playSessions, []);
+    sessions.push({ kidId, startedAt, endedAt, minutes });
+    save(KEYS.playSessions, sessions);
+    return { minutes };
+  }
+
+  // Sums minutes played by this kid in sessions that STARTED at or
+  // after `sinceIso` — used for both "today" (daily limit) and "this
+  // week" (parent dashboard) by passing a different cutoff.
+  function getPlayMinutesSince(kidId, sinceIso) {
+    return load(KEYS.playSessions, [])
+      .filter((s) => s.kidId === kidId && s.startedAt >= sinceIso)
+      .reduce((sum, s) => sum + s.minutes, 0);
+  }
+
+  function startOfTodayIso(now) {
+    return `${new Date(now).toISOString().slice(0, 10)}T00:00:00.000Z`;
+  }
+
+  function getPlayMinutesToday(kidId, now) {
+    return getPlayMinutesSince(kidId, startOfTodayIso(now));
+  }
+
   function getWorldState(kidId) {
     const all = load(KEYS.worldState, {});
-    return all[kidId] ? { ...defaultWorldState(), ...all[kidId] } : defaultWorldState();
+    const merged = all[kidId] ? { ...defaultWorldState(), ...all[kidId] } : defaultWorldState();
+    merged.regionsDiscovered = normalizeIdList(merged.regionsDiscovered);
+    merged.chestsOpened = normalizeIdList(merged.chestsOpened);
+    merged.puzzlesSolved = normalizeIdList(merged.puzzlesSolved);
+    merged.bossesDefeated = normalizeIdList(merged.bossesDefeated);
+    return merged;
   }
 
   function saveWorldState(kidId, worldState) {
@@ -423,32 +496,41 @@ export function createSavingsQuestStore(storage) {
     return { written: true, worldState: saveWorldState(kidId, ws) };
   }
 
-  function markRegionDiscovered(kidId, regionId) {
+  function markRegionDiscovered(kidId, regionId, now) {
     const ws = getWorldState(kidId);
-    if (ws.regionsDiscovered.includes(regionId)) return { written: false, worldState: ws };
-    ws.regionsDiscovered = [...ws.regionsDiscovered, regionId];
+    if (ws.regionsDiscovered.some((e) => e.id === regionId)) return { written: false, worldState: ws };
+    ws.regionsDiscovered = [...ws.regionsDiscovered, { id: regionId, at: now }];
     return { written: true, worldState: saveWorldState(kidId, ws) };
   }
 
-  function openChest(kidId, chestId) {
+  function openChest(kidId, chestId, now) {
     const ws = getWorldState(kidId);
-    if (ws.chestsOpened.includes(chestId)) return { written: false, worldState: ws };
-    ws.chestsOpened = [...ws.chestsOpened, chestId];
+    if (ws.chestsOpened.some((e) => e.id === chestId)) return { written: false, worldState: ws };
+    ws.chestsOpened = [...ws.chestsOpened, { id: chestId, at: now }];
     return { written: true, worldState: saveWorldState(kidId, ws) };
   }
 
-  function solvePuzzle(kidId, puzzleId) {
+  function solvePuzzle(kidId, puzzleId, now) {
     const ws = getWorldState(kidId);
-    if (ws.puzzlesSolved.includes(puzzleId)) return { written: false, worldState: ws };
-    ws.puzzlesSolved = [...ws.puzzlesSolved, puzzleId];
+    if (ws.puzzlesSolved.some((e) => e.id === puzzleId)) return { written: false, worldState: ws };
+    ws.puzzlesSolved = [...ws.puzzlesSolved, { id: puzzleId, at: now }];
     return { written: true, worldState: saveWorldState(kidId, ws) };
   }
 
-  function defeatBoss(kidId, bossId) {
+  function defeatBoss(kidId, bossId, now) {
     const ws = getWorldState(kidId);
-    if (ws.bossesDefeated.includes(bossId)) return { written: false, worldState: ws };
-    ws.bossesDefeated = [...ws.bossesDefeated, bossId];
+    if (ws.bossesDefeated.some((e) => e.id === bossId)) return { written: false, worldState: ws };
+    ws.bossesDefeated = [...ws.bossesDefeated, { id: bossId, at: now }];
     return { written: true, worldState: saveWorldState(kidId, ws) };
+  }
+
+  // Stage 5 parent dashboard: puzzle solves since `sinceIso`, each
+  // resolved against puzzlesCatalog/regionsCatalog/npcLessonsCatalog by
+  // the caller (ui.js) to produce plain-language "what they learned."
+  // Pre-Stage-5 solves have at: null and are excluded — their timing is
+  // genuinely unknown, not "not recent."
+  function getPuzzleSolvesSince(kidId, sinceIso) {
+    return getWorldState(kidId).puzzlesSolved.filter((e) => e.at && e.at >= sinceIso);
   }
 
   function getQuests() {
@@ -466,8 +548,13 @@ export function createSavingsQuestStore(storage) {
 
   function recomputeHeroState(kidId) {
     const entries = ledgerForKid(kidId);
+    // "bonus" (Stage 5's manual parent-granted XP) counts toward level
+    // the same as "save" — it's XP for a real money decision, same
+    // spirit as Save itself, just parent-recognized rather than
+    // formula-derived. Everything else about "level never decreases"
+    // still holds: bonus grants are only ever positive amounts.
     const saveXpTotal = entries
-      .filter((e) => e.track === "save")
+      .filter((e) => e.track === "save" || e.track === "bonus")
       .reduce((sum, e) => sum + e.amount, 0);
     const heartTotal = entries
       .filter((e) => e.track === "heart")
@@ -522,14 +609,31 @@ export function createSavingsQuestStore(storage) {
     weekKeys.add(startOfWeekKey(now));
     const streakWeeks = computeStreakWeeks(weekKeys, descendingWeekKeys(now));
 
-    const xp = computeSaveXp({ netAmount, streakWeeks });
+    // Stage 5: the kid's XP-rate preset (Gentle/Standard/Challenging)
+    // and, if the parent turned it on, the parent-match bonus both
+    // layer on top of the streak multiplier as a single combined rate.
+    // Parent match is a GAME-ONLY XP multiplier — it never touches or
+    // matches real money (rules #1/#2).
+    const kidSettings = getKidSettings(kidId);
+    const presetMultiplier = CONFIG.XP_RATE_PRESETS[kidSettings.xpRatePreset] || 1;
+    const matchMultiplier = kidSettings.parentMatchEnabled ? 1 + kidSettings.parentMatchRate : 1;
+    const rateMultiplier = presetMultiplier * matchMultiplier;
+
+    const xp = computeSaveXp({ netAmount, streakWeeks, rateMultiplier });
 
     appendLedgerEntry({
       kidId,
       sourceEventId,
       track: "save",
       amount: xp,
-      meta: { grossAmount: amount, netAmount, streakWeeks },
+      meta: {
+        grossAmount: amount,
+        netAmount,
+        streakWeeks,
+        xpRatePreset: kidSettings.xpRatePreset,
+        parentMatchApplied: kidSettings.parentMatchEnabled,
+        rateMultiplier,
+      },
       createdAt: now,
     });
 
@@ -642,11 +746,91 @@ export function createSavingsQuestStore(storage) {
     return { written: true, hero };
   }
 
+  // --- Stage 5: manual Bonus XP ---
+  //
+  // A parent-initiated action, not a replay of an external event, so
+  // there's no natural sourceEventId to dedupe against — newId()
+  // guarantees each grant is its own ledger entry, same uniqueness
+  // guarantee as every other sourceEventId in this file. Written to
+  // BOTH the XP ledger (so it counts toward level, via
+  // recomputeHeroState's "save" + "bonus" sum above) and a separate
+  // bonus_grants table (so the child-facing UI can show/acknowledge the
+  // parent's note once, independent of XP-ledger bookkeeping).
+  function grantBonusXp(kidId, { amount, note, grantedAt }) {
+    const sourceEventId = newId("mm_bonus");
+    appendLedgerEntry({
+      kidId,
+      sourceEventId,
+      track: "bonus",
+      amount: Math.max(0, Math.round(amount)),
+      meta: { note },
+      createdAt: grantedAt,
+    });
+    const hero = recomputeHeroState(kidId);
+
+    const all = load(KEYS.bonusGrants, {});
+    const list = all[kidId] || [];
+    const grant = { id: sourceEventId, amount: Math.max(0, Math.round(amount)), note, grantedAt, seen: false };
+    list.push(grant);
+    all[kidId] = list;
+    save(KEYS.bonusGrants, all);
+
+    return { hero, grant };
+  }
+
+  function getBonusGrants(kidId) {
+    return load(KEYS.bonusGrants, {})[kidId] || [];
+  }
+
+  function markBonusGrantSeen(kidId, grantId) {
+    const all = load(KEYS.bonusGrants, {});
+    const list = all[kidId] || [];
+    const entry = list.find((g) => g.id === grantId);
+    if (entry) {
+      entry.seen = true;
+      all[kidId] = list;
+      save(KEYS.bonusGrants, all);
+    }
+  }
+
+  // --- Stage 5: Family Quest cheers ---
+  //
+  // Short, parent-written encouragement shown once in the World/Hero
+  // Hub, then dismissed. Tied to one kid (whichever is active when the
+  // parent sends it) rather than broadcast to the whole family, to
+  // keep it simple — see README assumptions.
+  function sendCheer(kidId, message, at) {
+    const all = load(KEYS.cheers, {});
+    const list = all[kidId] || [];
+    const cheer = { id: newId("mm_cheer"), message, at, seen: false };
+    list.push(cheer);
+    all[kidId] = list;
+    save(KEYS.cheers, all);
+    return cheer;
+  }
+
+  function getCheers(kidId) {
+    return load(KEYS.cheers, {})[kidId] || [];
+  }
+
+  function markCheerSeen(kidId, cheerId) {
+    const all = load(KEYS.cheers, {});
+    const list = all[kidId] || [];
+    const entry = list.find((c) => c.id === cheerId);
+    if (entry) {
+      entry.seen = true;
+      all[kidId] = list;
+      save(KEYS.cheers, all);
+    }
+  }
+
   return {
     getGameSettings,
     setGameSettings,
     isSavingsQuestEnabled,
     setSavingsQuestEnabled,
+    getKidSettings,
+    setKidSettings,
     getHero,
     isHeroCreated,
     createHero,
@@ -667,6 +851,9 @@ export function createSavingsQuestStore(storage) {
     proposeGoal,
     resolveGoalProposal,
     getPlaySessions,
+    recordPlaySession,
+    getPlayMinutesSince,
+    getPlayMinutesToday,
     getWorldState,
     spendStaminaCharge,
     recordDailyCheckIn,
@@ -674,6 +861,7 @@ export function createSavingsQuestStore(storage) {
     openChest,
     solvePuzzle,
     defeatBoss,
+    getPuzzleSolvesSince,
     getQuests,
     getQuestProgress,
     recomputeHeroState,
@@ -682,5 +870,11 @@ export function createSavingsQuestStore(storage) {
     recordChoreApprovedEvent,
     recordSpendEvent,
     recordWithdrawal,
+    grantBonusXp,
+    getBonusGrants,
+    markBonusGrantSeen,
+    sendCheer,
+    getCheers,
+    markCheerSeen,
   };
 }

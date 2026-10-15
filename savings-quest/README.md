@@ -1,10 +1,10 @@
 # Savings Quest
 
 Stage 1 (data, events, XP engine), Stage 2 (hero, dashboard card, goal
-flow), Stage 3 (gear, skills, loadout), and Stage 4 (Open World v1) are
-all in. Everything is inert until the `savingsQuest` feature flag is
-turned on — that's a real checkbox in the Parent view, not just a
-console command.
+flow), Stage 3 (gear, skills, loadout), Stage 4 (Open World v1), and
+Stage 5 (Parent Experience) are all in. Everything is inert until the
+`savingsQuest` feature flag is turned on — that's a real checkbox in
+the Parent view, not just a console command.
 
 ## How to run tests
 
@@ -14,21 +14,31 @@ npm test
 ```
 
 No dependencies to install — this uses Node's built-in test runner
-(`node --test`), not Jest/Vitest. 75 tests: Stage 1's XP math, level
+(`node --test`), not Jest/Vitest. 100 tests: Stage 1's XP math, level
 curve, streaks, idempotency, withdrawal handling, anti-farming, and
 event→XP→hero-state integration; Stage 2's pure UI-logic tests
 (next-unlock teaser, milestone path state, and a guard that fails loudly
 if a hero class ever grows a numeric stat field); Stage 3's unlock
-logic and stat calculation (`unlocks.js` — all 4 unlock condition types,
-the requirement-text phrasing including the brief's own two examples
-verbatim, newly-unlocked diffing, skill-point math and prerequisite
-gating, and stat summation with an explicit cosmetic-contributes-nothing
-guard); and Stage 4's world logic (`world-engine.js` — stamina-charge
-clamping, the daily-check-in date rule, landmark-path staging, both
-puzzle checkers, and the boss calm-down sequence checker), plus new
-`data.js` writer tests for the stamina-charge hook on chore approval,
-daily check-in idempotency, and the four new idempotent world-state
-writers (region discovered, chest opened, puzzle solved, boss defeated).
+logic and stat calculation (`unlocks.js` — all 4 unlock condition types
+(including Stage 5's new `familyQuest` type), the requirement-text
+phrasing including the brief's own two examples verbatim, newly-unlocked
+diffing, skill-point math and prerequisite gating, and stat summation
+with an explicit cosmetic-contributes-nothing guard); Stage 4's world
+logic (`world-engine.js` — stamina-charge clamping, the daily-check-in
+date rule, landmark-path staging, both puzzle checkers, and the boss
+calm-down sequence checker), plus `data.js` writer tests for the
+stamina-charge hook on chore approval, daily check-in idempotency, and
+the four idempotent world-state writers (region discovered, chest
+opened, puzzle solved, boss defeated); and Stage 5's settings
+enforcement (`world-engine.js`'s `isWithinQuietHours` — same-day and
+midnight-wrapping windows, `dailyLimitReached`, and the composite
+`canPlayNow` gate checked in priority order: flag off, kid disabled,
+quiet hours, daily limit, stamina charge), plus `data.js`/`events.js`
+tests for the XP-rate preset actually changing XP, the parent-match
+multiplier, Bonus XP counting toward level, cheer/bonus-grant
+round-trips, play-session minute tracking, and the per-kid `enabled`
+flag no-opping `onSplitCompleted`/`onChoreApproved` exactly like the
+family-wide flag already does.
 
 None of the DOM/Phaser rendering (`ui.js`, `world.js`) is unit tested —
 this project has stayed dependency-free throughout (Phaser is loaded
@@ -397,3 +407,120 @@ window.SavingsQuest.runBackfill({ kidId: '...' })  // one kid
     goal-as-destination framing reads better as something you journey
     toward in the second, deeper region rather than seeing immediately
     in the first.
+
+## Stage 5 demo steps: Parent Experience
+
+1. Serve the app, enable the flag, create a hero for one kid, and
+   approve a savings goal (steps 1-6 under Stage 1-2's demo steps).
+2. In **Parent** view, scroll past the existing enable/motion toggles —
+   you'll now see **📊 This Week's Progress**: level, goal progress bar
+   and dollar amounts, minutes played this week, the 3 most recent
+   unlocks, and a "What \_\_\_ learned this week" list. It starts empty
+   until the kid solves a puzzle in the World (see step 6).
+3. Below that, **⚙️ Game Settings for This Child**:
+   - Uncheck **Enable the game for this child**, switch to Kid view —
+     the whole Savings Quest panel disappears (same as the family-wide
+     flag being off). Re-check it to continue.
+   - Set a **Daily play-time limit** (e.g. 1 minute, to test quickly).
+     Play in the World for over a minute (or just wait — the check runs
+     every 30 real seconds) and watch a gentle "😴 Time to rest, hero!"
+     overlay interrupt the session and return to the World Gate, which
+     now shows "You've used up today's play time."
+   - Check **Quiet hours** and set a window that includes right now
+     (e.g. if it's 2pm, set 1pm-3pm). The World Gate's Enter button and
+     Hero Hub link both grey out with "It's quiet hours right now."
+   - Change **XP rate** to Gentle, Standard, or Challenging and do a
+     Save split in Kid view — Gentle earns visibly more XP than
+     Challenging for the identical dollar amount.
+   - Check **Parent match** (default 100% extra) and do another Save
+     split — XP roughly doubles on top of whatever the preset already
+     gave. This is clearly labeled as game-only; no real money moves.
+4. **✨ Manual Bonus XP**: type an amount (e.g. 50) and a note (e.g.
+   "Great job comparing prices before buying!"), click **Grant Bonus
+   XP**. Switch to Kid view — an amber banner appears above the hero
+   card: "✨ Bonus XP from a grown-up: +50 XP" with the note. Click
+   "Thanks!" to dismiss it (it won't reappear). The hero's level/XP bar
+   already reflects the bonus immediately.
+5. **🤝 Family Quest**: shows a shared progress bar — the sum of every
+   kid's real Save total vs. a parent-editable target (default $200).
+   Lower the target field to something already exceeded by your test
+   kid's save total and it flips to "🎉 Unlocked!" — check the Kid
+   view's Loadout tab and the new **Family Unity Banner** cosmetic is
+   now equippable for every kid in the family, not just one.
+6. Still in the Family Quest card, type a message in **Send a cheer**
+   (e.g. "So proud of your saving streak!") and click **Send Cheer**.
+   Switch to Kid view — a blue-ish amber banner shows "💌 A cheer from a
+   grown-up: So proud of your saving streak!" Dismiss it the same way.
+7. In Kid view, open the **🗺️ World** tab and solve either region's
+   puzzle. Back in Parent view, the weekly report's "What \_\_\_
+   learned this week" list now shows that puzzle's NPC lesson sentence.
+
+## Stage 5 assumptions (flagged for review)
+
+30. **"Controls per child" live in the existing Parent panel, which
+    already operates on whichever kid is active** — there was no
+    separate "pick a child to configure" screen to build, since the
+    app already has kid-switcher pills elsewhere and the Parent panel
+    already re-renders per active kid (goal approval already worked
+    this way). Switch kids, the settings card below just follows.
+31. **The per-kid "enable/disable" control is a second gate layered on
+    top of the existing family-wide flag, not a replacement for it.**
+    Both the family flag AND the per-kid flag must allow play — turning
+    the family flag off still turns everything off for every kid,
+    exactly as before Stage 5.
+32. **Daily play-time limits and quiet hours are enforced as a flat
+    gate, not a real-time countdown** — same reasoning as Stage 4's
+    stamina charge: rule #5 forbids "countdown pressure." The World
+    Gate re-evaluates on each visit, and a 30-second interval re-checks
+    while actively playing so a session ending mid-quiet-hours or
+    mid-limit is caught promptly — but the kid never sees a ticking
+    clock, just a gentle message when the answer changes from yes to no.
+33. **"Server-validated" / "server-side" again means data.js's stored
+    settings and real elapsed time, not a literal server** — consistent
+    with every prior stage's flag on this exact phrase (there's still
+    no backend). What makes it meaningfully "server-side" rather than
+    purely cosmetic: the checks read from the stored kid settings and
+    actual play-session timestamps, not from any value the in-game UI
+    itself could be tricked into displaying — a technically sophisticated
+    kid could still edit localStorage directly, same caveat as always.
+34. **XP-rate preset only scales Save XP**, not Heart or Stamina — Save
+    is the core leveling driver the brief's "XP-rate" language is
+    clearly about; Heart/Stamina are separate, uncapped tracks that
+    were never meant to be throttled.
+35. **Parent match is a pure game-XP multiplier, stacked on top of the
+    XP-rate preset**, and is logged in the ledger entry's `meta` for
+    transparency (`parentMatchApplied`, `rateMultiplier`). It never
+    creates a second ledger entry, a separate "matched" currency, or
+    anything resembling a real-money match — rules #1/#2 forbid the
+    game from ever driving or touching real money, and this stays
+    strictly on the game-XP side of that line.
+36. **Manual Bonus XP counts toward level** (via a new "bonus" ledger
+    track, summed into total Save XP in `recomputeHeroState`), on the
+    theory that a parent manually recognizing a good money decision is
+    at least as levelup-worthy as the formula-driven Save XP it sits
+    alongside — and since grants are always positive, this can't
+    violate the "level never decreases" rule.
+37. **Family Quest is a single shared target, not a race or a
+    leaderboard** — every kid in the family sees the same progress bar
+    and the same unlock; COPPA rule #5 forbids anything that looks like
+    a competitive public leaderboard between children, so this is
+    explicitly cooperative, not comparative.
+38. **Cheers are sent to whichever kid is currently active in Parent
+    view, one at a time** — not broadcast to the whole family — simpler
+    than adding a kid-picker to the Family Quest card, and a parent with
+    multiple kids can just switch the active kid before sending each one.
+39. **`chestsOpened`/`puzzlesSolved`/`bossesDefeated`/`regionsDiscovered`
+    gained a timestamp** (`{id, at}` instead of a plain id string) so
+    the new "what did my child learn this week" report can filter by
+    recency. Pre-Stage-5 data normalizes transparently (`at: null`,
+    treated as "unknown time," excluded from "this week" math) — same
+    backward-compat pattern as `getHero` backfilling new fields.
+40. **Play time is measured per World session** (canvas mount to
+    teardown — switching regions flushes and restarts a session;
+    closing the tab or navigating away without clicking Exit still
+    flushes it, via the same teardown path `renderKidPanel` already
+    calls on every re-render). The Hero Hub fallback does **not**
+    record play time, since it was designed as a stamina-free,
+    always-available fallback — consistent with Stage 4 but worth
+    knowing if a parent wonders why Hero-Hub-only sessions don't show
+    up in the weekly play-time stat.

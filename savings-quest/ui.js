@@ -26,12 +26,17 @@ import {
   computeHeroStats,
 } from "./unlocks.js";
 import { createWorld } from "./world.js";
+import { CONFIG } from "./config.js";
 
 function escapeHtml(str) {
   if (window.escapeHtml) return window.escapeHtml(str);
   const div = document.createElement("div");
   div.textContent = str == null ? "" : String(str);
   return div.innerHTML;
+}
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
 }
 
 function avatarSvg(lookId, hex) {
@@ -339,6 +344,25 @@ export function createUi({ store, catalogs }) {
     });
   }
 
+  function kidSaveTotal(kidId) {
+    return window.computeTotals && window.roundsForKid ? window.computeTotals(window.roundsForKid(kidId)).save : 0;
+  }
+
+  // Stage 5: Family Quest progress is the same number for every kid in
+  // the family (sum of everyone's real Save total), so it's computed
+  // once here and folded into every kid's heroContext — unlocks.js then
+  // handles it with the exact same milestone-style math an individual
+  // goal already uses, via the "familyQuest" unlock type.
+  function buildFamilyQuestContext() {
+    const settings = store.getGameSettings();
+    const kids = window.loadKids ? window.loadKids() : [];
+    const progress = kids.reduce((sum, kid) => sum + kidSaveTotal(kid.id), 0);
+    return {
+      familyQuestProgress: progress,
+      familyQuestTarget: settings.family.familyQuestTarget || CONFIG.FAMILY_QUEST_DEFAULT_TARGET,
+    };
+  }
+
   // Assembles the plain-data context unlocks.js needs, bridging Stage 1's
   // store with Money Muscle's own globals (goal, real save total,
   // completed-goal count) — the only place in this file that does so for
@@ -346,10 +370,6 @@ export function createUi({ store, catalogs }) {
   function buildHeroContext(kidId) {
     const hero = store.getHero(kidId);
     const goal = window.getGoal ? window.getGoal(kidId) : null;
-    const saveTotal =
-      window.computeTotals && window.roundsForKid
-        ? window.computeTotals(window.roundsForKid(kidId)).save
-        : 0;
     const completedGoalsCount = window.getCompletedGoalsFor
       ? window.getCompletedGoalsFor(kidId).length
       : 0;
@@ -360,7 +380,8 @@ export function createUi({ store, catalogs }) {
       streakWeeks,
       completedGoalsCount,
       goalTarget: goal ? goal.target : null,
-      currentSaveTotal: saveTotal,
+      currentSaveTotal: kidSaveTotal(kidId),
+      ...buildFamilyQuestContext(),
     };
   }
 
@@ -561,6 +582,51 @@ export function createUi({ store, catalogs }) {
     });
   }
 
+  // Stage 5: unseen Bonus XP grants and parent cheers, shown once each,
+  // dismissible. Both are small, read-only notices — dismissing one
+  // only marks it seen, it never affects XP or anything else.
+  function renderMessageBanners(container, kidId) {
+    const unseenBonuses = store.getBonusGrants(kidId).filter((g) => !g.seen);
+    const unseenCheers = store.getCheers(kidId).filter((c) => !c.seen);
+    if (unseenBonuses.length === 0 && unseenCheers.length === 0) {
+      container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = `
+      ${unseenBonuses
+        .map(
+          (g) => `
+        <div class="sq-card sq-banner-card" data-kind="bonus" data-id="${g.id}">
+          <strong>✨ Bonus XP from a grown-up: +${g.amount} XP</strong>
+          <p>${escapeHtml(g.note)}</p>
+          <button type="button" class="sq-decline-btn sq-banner-dismiss">Thanks!</button>
+        </div>
+      `,
+        )
+        .join("")}
+      ${unseenCheers
+        .map(
+          (c) => `
+        <div class="sq-card sq-banner-card" data-kind="cheer" data-id="${c.id}">
+          <strong>💌 A cheer from a grown-up:</strong>
+          <p>${escapeHtml(c.message)}</p>
+          <button type="button" class="sq-decline-btn sq-banner-dismiss">Thanks!</button>
+        </div>
+      `,
+        )
+        .join("")}
+    `;
+
+    container.querySelectorAll(".sq-banner-card").forEach((card) => {
+      card.querySelector(".sq-banner-dismiss").addEventListener("click", () => {
+        if (card.dataset.kind === "bonus") store.markBonusGrantSeen(kidId, card.dataset.id);
+        else store.markCheerSeen(kidId, card.dataset.id);
+        card.remove();
+      });
+    });
+  }
+
   function renderKidPanel(container, kidId) {
     applyMotionPreference(store);
 
@@ -593,6 +659,7 @@ export function createUi({ store, catalogs }) {
     const hero = store.getHero(kidId);
     container.className = `sq-panel ${densityClass(hero)}`;
     container.innerHTML = `
+      <div id="sqBannerMount"></div>
       <div id="sqHeroCardMount"></div>
       <div id="sqGoalFlowMount"></div>
       <div class="sq-tab-row">
@@ -602,6 +669,7 @@ export function createUi({ store, catalogs }) {
       </div>
       <div id="sqTabMount"></div>
     `;
+    renderMessageBanners(container.querySelector("#sqBannerMount"), kidId);
     renderHeroCard(container.querySelector("#sqHeroCardMount"), kidId);
     renderGoalFlow(container.querySelector("#sqGoalFlowMount"), kidId);
 
@@ -630,10 +698,50 @@ export function createUi({ store, catalogs }) {
     });
   }
 
+  // Stage 5 parent dashboard: level, goal progress, recent unlocks, play
+  // time, and a plain-language "what they learned" derived from which
+  // puzzles were solved in the last 7 days (each puzzle maps to one
+  // region, each region to one NPC, each NPC to one lesson sentence).
+  function buildWeeklyReport(kidId) {
+    const sinceIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const hero = store.getHero(kidId);
+    const goal = window.getGoal ? window.getGoal(kidId) : null;
+    const saveTotal = kidSaveTotal(kidId);
+    const goalPct = goal && goal.target > 0 ? Math.min(100, Math.round((saveTotal / goal.target) * 100)) : null;
+
+    const recentUnlocks = store
+      .getHeroInventory(kidId)
+      .slice()
+      .sort((a, b) => new Date(b.acquiredAt) - new Date(a.acquiredAt))
+      .slice(0, 3)
+      .map((owned) => catalogs.items.items.find((i) => i.id === owned.itemId))
+      .filter(Boolean);
+
+    const playMinutes = Math.round(store.getPlayMinutesSince(kidId, sinceIso));
+
+    const learnedLessons = new Set();
+    for (const solve of store.getPuzzleSolvesSince(kidId, sinceIso)) {
+      const puzzle = catalogs.puzzles.puzzles.find((p) => p.id === solve.id);
+      const region = puzzle && catalogs.regions.regions.find((r) => r.id === puzzle.region);
+      const npc = region && region.npcId && catalogs.npcLessons.npcs.find((n) => n.id === region.npcId);
+      if (npc) learnedLessons.add(npc.lesson);
+    }
+
+    return { hero, goal, saveTotal, goalPct, recentUnlocks, playMinutes, learnedLessons: [...learnedLessons] };
+  }
+
   function renderParentPanel(container, kidId) {
     const settings = store.getGameSettings();
     const proposal = kidId ? store.getGoalProposal(kidId) : null;
     const showApproval = Boolean(proposal && proposal.status === "pending");
+    const kidSettings = kidId ? store.getKidSettings(kidId) : null;
+    const report = kidId ? buildWeeklyReport(kidId) : null;
+    const family = buildFamilyQuestContext();
+    const familyPct = family.familyQuestTarget
+      ? Math.min(100, Math.round((family.familyQuestProgress / family.familyQuestTarget) * 100))
+      : 0;
+    const familyUnlocked = isItemUnlocked({ unlock: { type: "familyQuest", value: 1 } }, family);
+    const quietHours = kidSettings ? kidSettings.quietHours : null;
 
     container.innerHTML = `
       <div class="sq-card">
@@ -666,6 +774,117 @@ export function createUi({ store, catalogs }) {
       `
           : ""
       }
+      ${
+        report
+          ? `
+        <div class="sq-card">
+          <h2>📊 This Week's Progress</h2>
+          <p class="sq-xp-label">Level ${report.hero.level}${report.goal ? ` &middot; saving for ${escapeHtml(report.goal.name)}` : ""}</p>
+          ${
+            report.goalPct !== null
+              ? `<div class="sq-xp-track"><div class="sq-xp-fill" style="width:${report.goalPct}%"></div></div>
+                 <p class="sq-xp-label">$${report.saveTotal} of $${report.goal.target} saved (${report.goalPct}%)</p>`
+              : `<p class="sq-world-gate-hint">No active goal yet.</p>`
+          }
+          <p class="sq-xp-label">🕹️ Played ${report.playMinutes} minute${report.playMinutes === 1 ? "" : "s"} this week</p>
+          <p class="sq-xp-label">Recent unlocks: ${
+            report.recentUnlocks.length
+              ? report.recentUnlocks.map((i) => escapeHtml(i.name)).join(", ")
+              : "none yet"
+          }</p>
+          <p style="font-weight:700;color:var(--mm-gray-90);margin-bottom:4px;">What ${escapeHtml(report.hero.name || "your child")} learned this week:</p>
+          ${
+            report.learnedLessons.length
+              ? `<ul style="margin:0;padding-left:20px;color:var(--mm-gray-70);">${report.learnedLessons
+                  .map((l) => `<li>${escapeHtml(l)}</li>`)
+                  .join("")}</ul>`
+              : `<p class="sq-world-gate-hint">No world lessons yet this week — try a puzzle in the World tab!</p>`
+          }
+        </div>
+      `
+          : ""
+      }
+      ${
+        kidSettings
+          ? `
+        <div class="sq-card">
+          <h2>⚙️ Game Settings for This Child</h2>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
+            <input type="checkbox" id="sqKidEnabledToggle" ${kidSettings.enabled ? "checked" : ""}>
+            Enable the game for this child
+          </label>
+          <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
+            Daily play-time limit (minutes, blank = no limit)<br>
+            <input type="number" min="0" id="sqDailyLimitInput" value="${kidSettings.dailyPlayMinutes ?? ""}" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100px;">
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--mm-gray-70);margin-bottom:6px;">
+            <input type="checkbox" id="sqQuietHoursToggle" ${quietHours ? "checked" : ""}>
+            Quiet hours (no play allowed)
+          </label>
+          <div id="sqQuietHoursInputs" style="display:${quietHours ? "flex" : "none"};gap:10px;align-items:center;margin-bottom:10px;">
+            From <input type="time" id="sqQuietStart" value="${quietHours ? pad2(quietHours.startHour) + ":" + pad2(quietHours.startMinute || 0) : "20:00"}">
+            to <input type="time" id="sqQuietEnd" value="${quietHours ? pad2(quietHours.endHour) + ":" + pad2(quietHours.endMinute || 0) : "07:00"}">
+          </div>
+          <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
+            XP rate<br>
+            <select id="sqXpPresetSelect" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);">
+              <option value="gentle" ${kidSettings.xpRatePreset === "gentle" ? "selected" : ""}>Gentle (faster leveling)</option>
+              <option value="standard" ${kidSettings.xpRatePreset === "standard" ? "selected" : ""}>Standard</option>
+              <option value="challenging" ${kidSettings.xpRatePreset === "challenging" ? "selected" : ""}>Challenging (slower leveling)</option>
+            </select>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--mm-gray-70);margin-bottom:6px;">
+            <input type="checkbox" id="sqParentMatchToggle" ${kidSettings.parentMatchEnabled ? "checked" : ""}>
+            Parent match (game XP only — never real money)
+          </label>
+          <label style="display:${kidSettings.parentMatchEnabled ? "block" : "none"};font-weight:600;color:var(--mm-gray-70);" id="sqParentMatchRateRow">
+            Match rate (% extra XP)<br>
+            <input type="number" min="0" step="10" id="sqParentMatchRateInput" value="${Math.round(kidSettings.parentMatchRate * 100)}" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100px;">
+          </label>
+        </div>
+
+        <div class="sq-card">
+          <h2>✨ Manual Bonus XP</h2>
+          <p class="sq-world-gate-hint">Reward a good money decision directly — this always counts toward leveling up.</p>
+          <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
+            XP amount<br>
+            <input type="number" min="1" id="sqBonusAmountInput" value="50" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100px;">
+          </label>
+          <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
+            Note (shown to your child)<br>
+            <input type="text" id="sqBonusNoteInput" placeholder="e.g. Great job comparing prices before buying!" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100%;max-width:320px;">
+          </label>
+          <button type="button" class="sq-primary-btn" id="sqGrantBonusBtn">Grant Bonus XP</button>
+        </div>
+      `
+          : ""
+      }
+      <div class="sq-card">
+        <h2>🤝 Family Quest</h2>
+        <p class="sq-world-gate-hint">Everyone's real Save totals count toward one shared family goal.</p>
+        <div class="sq-xp-track"><div class="sq-xp-fill" style="width:${familyPct}%"></div></div>
+        <p class="sq-xp-label">$${Math.round(family.familyQuestProgress)} of $${family.familyQuestTarget} saved together (${familyPct}%)</p>
+        ${
+          familyUnlocked
+            ? `<p style="font-weight:700;color:var(--mm-green-dark);">🎉 Unlocked! The Family Unity Banner is now available for everyone to equip.</p>`
+            : ""
+        }
+        <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin:10px 0;">
+          Family Quest target ($)<br>
+          <input type="number" min="1" id="sqFamilyTargetInput" value="${family.familyQuestTarget}" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100px;">
+        </label>
+        ${
+          kidId
+            ? `
+          <label style="display:block;font-weight:600;color:var(--mm-gray-70);margin-bottom:10px;">
+            Send a cheer to this child<br>
+            <input type="text" id="sqCheerInput" placeholder="e.g. So proud of your saving streak!" style="margin-top:4px;padding:6px;border-radius:8px;border:2px solid var(--mm-gray-10);width:100%;max-width:320px;">
+          </label>
+          <button type="button" class="sq-decline-btn" id="sqSendCheerBtn">Send Cheer 💌</button>
+        `
+            : ""
+        }
+      </div>
     `;
 
     container.querySelector("#sqEnableToggle").addEventListener("change", (e) => {
@@ -690,6 +909,73 @@ export function createUi({ store, catalogs }) {
       container.querySelector("#sqDeclineGoalBtn").addEventListener("click", () => {
         store.resolveGoalProposal(kidId, "declined");
         renderParentPanel(container, kidId);
+      });
+    }
+
+    if (kidSettings) {
+      container.querySelector("#sqKidEnabledToggle").addEventListener("change", (e) => {
+        store.setKidSettings(kidId, { enabled: e.target.checked });
+      });
+
+      container.querySelector("#sqDailyLimitInput").addEventListener("change", (e) => {
+        const val = e.target.value.trim();
+        store.setKidSettings(kidId, { dailyPlayMinutes: val === "" ? null : Math.max(0, parseInt(val, 10)) });
+      });
+
+      const quietInputsEl = container.querySelector("#sqQuietHoursInputs");
+      function saveQuietHours() {
+        if (!container.querySelector("#sqQuietHoursToggle").checked) {
+          store.setKidSettings(kidId, { quietHours: null });
+          return;
+        }
+        const [startHour, startMinute] = container.querySelector("#sqQuietStart").value.split(":").map(Number);
+        const [endHour, endMinute] = container.querySelector("#sqQuietEnd").value.split(":").map(Number);
+        store.setKidSettings(kidId, { quietHours: { startHour, startMinute, endHour, endMinute } });
+      }
+      container.querySelector("#sqQuietHoursToggle").addEventListener("change", (e) => {
+        quietInputsEl.style.display = e.target.checked ? "flex" : "none";
+        saveQuietHours();
+      });
+      container.querySelector("#sqQuietStart").addEventListener("change", saveQuietHours);
+      container.querySelector("#sqQuietEnd").addEventListener("change", saveQuietHours);
+
+      container.querySelector("#sqXpPresetSelect").addEventListener("change", (e) => {
+        store.setKidSettings(kidId, { xpRatePreset: e.target.value });
+      });
+
+      const matchRateRow = container.querySelector("#sqParentMatchRateRow");
+      container.querySelector("#sqParentMatchToggle").addEventListener("change", (e) => {
+        matchRateRow.style.display = e.target.checked ? "block" : "none";
+        store.setKidSettings(kidId, { parentMatchEnabled: e.target.checked });
+      });
+      container.querySelector("#sqParentMatchRateInput").addEventListener("change", (e) => {
+        store.setKidSettings(kidId, { parentMatchRate: Math.max(0, parseFloat(e.target.value) || 0) / 100 });
+      });
+
+      container.querySelector("#sqGrantBonusBtn").addEventListener("click", () => {
+        const amount = Math.max(1, parseInt(container.querySelector("#sqBonusAmountInput").value, 10) || 0);
+        const note = container.querySelector("#sqBonusNoteInput").value.trim();
+        if (!note) return;
+        store.grantBonusXp(kidId, { amount, note, grantedAt: new Date().toISOString() });
+        renderParentPanel(container, kidId);
+      });
+    }
+
+    container.querySelector("#sqFamilyTargetInput").addEventListener("change", (e) => {
+      const s = store.getGameSettings();
+      s.family.familyQuestTarget = Math.max(1, parseInt(e.target.value, 10) || CONFIG.FAMILY_QUEST_DEFAULT_TARGET);
+      store.setGameSettings(s);
+      renderParentPanel(container, kidId);
+    });
+
+    if (kidId) {
+      container.querySelector("#sqSendCheerBtn").addEventListener("click", () => {
+        const input = container.querySelector("#sqCheerInput");
+        const message = input.value.trim();
+        if (!message) return;
+        store.sendCheer(kidId, message, new Date().toISOString());
+        input.value = "";
+        input.placeholder = "Cheer sent! 💌";
       });
     }
   }

@@ -15,6 +15,8 @@ const baseContext = {
   completedGoalsCount: 0,
   goalTarget: 100,
   currentSaveTotal: 30,
+  familyQuestProgress: 60,
+  familyQuestTarget: 200,
 };
 
 test("isItemUnlocked: level condition", () => {
@@ -81,6 +83,30 @@ test("describeUnlockRequirement: milestone with no goal asks to set one", () => 
   assert.equal(
     describeUnlockRequirement({ unlock: { type: "milestone", value: 0.5 } }, noGoal),
     "Set a savings goal to work toward this",
+  );
+});
+
+test("isItemUnlocked: familyQuest condition against the family-wide target", () => {
+  // familyQuestProgress=60, familyQuestTarget=200 -> 30% of the way there
+  assert.equal(isItemUnlocked({ unlock: { type: "familyQuest", value: 0.25 } }, baseContext), true);
+  assert.equal(isItemUnlocked({ unlock: { type: "familyQuest", value: 0.5 } }, baseContext), false);
+});
+
+test("isItemUnlocked: familyQuest with no family target set is never true", () => {
+  const noTarget = { ...baseContext, familyQuestTarget: null };
+  assert.equal(isItemUnlocked({ unlock: { type: "familyQuest", value: 0.25 } }, noTarget), false);
+});
+
+test("describeUnlockRequirement: familyQuest phrasing, including the no-target case", () => {
+  // familyQuestTarget=200, 0.5 needs $100, family has $60 -> $40 more
+  assert.equal(
+    describeUnlockRequirement({ unlock: { type: "familyQuest", value: 0.5 } }, baseContext),
+    "Save $40 more together as a family",
+  );
+  const noTarget = { ...baseContext, familyQuestTarget: null };
+  assert.equal(
+    describeUnlockRequirement({ unlock: { type: "familyQuest", value: 0.5 } }, noTarget),
+    "Ask a parent to set a Family Quest goal",
   );
 });
 

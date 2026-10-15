@@ -57,3 +57,51 @@ export function checkBossSequence(submittedSequence, correctSequence) {
   if (submittedSequence.length !== correctSequence.length) return false;
   return submittedSequence.every((step, i) => step === correctSequence[i]);
 }
+
+// ---------------------------------------------------------------------
+// Stage 5 — settings enforcement. All pure: `now` and every setting
+// come in as plain data, so quiet hours / daily limits / the flags are
+// fully testable without a clock, localStorage, or Phaser.
+// ---------------------------------------------------------------------
+
+// quietHours: { startHour, startMinute=0, endHour, endMinute=0 } in the
+// browser's local time, or null/undefined for "no quiet hours". Handles
+// a window that wraps past midnight (e.g. 20:00 -> 07:00).
+export function isWithinQuietHours(now, quietHours) {
+  if (!quietHours) return false;
+  const d = new Date(now);
+  const minutesNow = d.getHours() * 60 + d.getMinutes();
+  const start = quietHours.startHour * 60 + (quietHours.startMinute || 0);
+  const end = quietHours.endHour * 60 + (quietHours.endMinute || 0);
+  if (start === end) return false; // zero-width window = disabled
+  if (start < end) return minutesNow >= start && minutesNow < end;
+  return minutesNow >= start || minutesNow < end; // wraps past midnight
+}
+
+export function dailyLimitReached(minutesPlayedToday, dailyPlayMinutes) {
+  if (dailyPlayMinutes == null) return false;
+  return minutesPlayedToday >= dailyPlayMinutes;
+}
+
+// The single composite gate the World Gate (and the in-world periodic
+// re-check) both call. Checked in the order a parent would expect to
+// explain it: is the game even on, is it on for THIS kid, is it quiet
+// hours, has today's limit already been used up, and only then does
+// stamina charge (Stage 4's separate, unrelated gate) get checked.
+export function canPlayNow({
+  familyEnabled,
+  kidEnabled,
+  now,
+  quietHours,
+  minutesPlayedToday,
+  dailyPlayMinutes,
+  staminaCharge,
+  costPerEntry,
+}) {
+  if (!familyEnabled) return { ok: false, reason: "flag-off" };
+  if (!kidEnabled) return { ok: false, reason: "kid-disabled" };
+  if (isWithinQuietHours(now, quietHours)) return { ok: false, reason: "quiet-hours" };
+  if (dailyLimitReached(minutesPlayedToday, dailyPlayMinutes)) return { ok: false, reason: "daily-limit" };
+  if (!canEnterRegion(staminaCharge, costPerEntry)) return { ok: false, reason: "no-charge" };
+  return { ok: true, reason: null };
+}

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "_note": "32 items across weapon/armor/companion/cosmetic, Common->Legendary. 'stats' are in-game only (power/heart/wisdom) and never affect real money. Cosmetics always have empty stats on purpose — looks never confer advantage.",
+  "_note": "33 items across weapon/armor/companion/cosmetic, Common->Legendary (32 from Stage 3, plus one Stage 5 Family Quest cosmetic). 'stats' are in-game only (power/heart/wisdom) and never affect real money. Cosmetics always have empty stats on purpose — looks never confer advantage.",
   "items": [
     { "id": "training_sword", "name": "Training Sword", "category": "weapon", "rarity": "common", "tooltip": "Every saver starts somewhere — small deposits add up.", "unlock": { "type": "level", "value": 1 }, "stats": { "power": 1 } },
     { "id": "piggy_bank_mace", "name": "Piggy Bank Mace", "category": "weapon", "rarity": "common", "tooltip": "A simple start: the first dollar saved is the hardest.", "unlock": { "type": "level", "value": 3 }, "stats": { "power": 2 } },
@@ -36,6 +36,7 @@
     { "id": "milestone_medal_set", "name": "Milestone Medal Set", "category": "cosmetic", "rarity": "rare", "tooltip": "Wear your progress — you earned it.", "unlock": { "type": "milestone", "value": 0.75 }, "stats": {} },
     { "id": "goalgetter_crown", "name": "Goal-Getter Crown", "category": "cosmetic", "rarity": "rare", "tooltip": "A crown for every goal you finish.", "unlock": { "type": "goalCompletion", "value": 1 }, "stats": {} },
     { "id": "starlight_saver_aura", "name": "Starlight Saver Aura", "category": "cosmetic", "rarity": "epic", "tooltip": "Some savers just shine a little brighter.", "unlock": { "type": "level", "value": 35 }, "stats": {} },
-    { "id": "legendary_nestegg_halo", "name": "Legendary Nest-Egg Halo", "category": "cosmetic", "rarity": "legendary", "tooltip": "The mark of a saver who went all the way.", "unlock": { "type": "level", "value": 50 }, "stats": {} }
+    { "id": "legendary_nestegg_halo", "name": "Legendary Nest-Egg Halo", "category": "cosmetic", "rarity": "legendary", "tooltip": "The mark of a saver who went all the way.", "unlock": { "type": "level", "value": 50 }, "stats": {} },
+    { "id": "family_unity_banner", "name": "Family Unity Banner", "category": "cosmetic", "rarity": "epic", "tooltip": "Saving together works better than saving alone.", "unlock": { "type": "familyQuest", "value": 1 }, "stats": {} }
   ]
 }

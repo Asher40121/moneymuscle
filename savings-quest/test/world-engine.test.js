@@ -9,6 +9,9 @@ import {
   checkCoinOrderPuzzle,
   checkNeedsWantsSort,
   checkBossSequence,
+  isWithinQuietHours,
+  dailyLimitReached,
+  canPlayNow,
 } from "../world-engine.js";
 
 test("canEnterRegion: enough charge vs. not enough", () => {
@@ -88,4 +91,76 @@ test("checkBossSequence: exact match only", () => {
   assert.equal(checkBossSequence(["breathe", "count", "wait", "smile"], correct), true);
   assert.equal(checkBossSequence(["breathe", "wait", "count", "smile"], correct), false);
   assert.equal(checkBossSequence(["breathe", "count"], correct), false);
+});
+
+test("isWithinQuietHours: no quiet hours configured is never quiet", () => {
+  assert.equal(isWithinQuietHours("2026-10-14T22:00:00", null), false);
+});
+
+test("isWithinQuietHours: simple same-day window", () => {
+  const q = { startHour: 13, endHour: 15 };
+  assert.equal(isWithinQuietHours("2026-10-14T13:30:00", q), true);
+  assert.equal(isWithinQuietHours("2026-10-14T12:59:00", q), false);
+  assert.equal(isWithinQuietHours("2026-10-14T15:00:00", q), false); // end is exclusive
+});
+
+test("isWithinQuietHours: window wraps past midnight", () => {
+  const q = { startHour: 20, endHour: 7 };
+  assert.equal(isWithinQuietHours("2026-10-14T23:00:00", q), true); // late night
+  assert.equal(isWithinQuietHours("2026-10-14T06:30:00", q), true); // early morning
+  assert.equal(isWithinQuietHours("2026-10-14T12:00:00", q), false); // midday
+});
+
+test("isWithinQuietHours: zero-width window (start === end) is disabled", () => {
+  assert.equal(isWithinQuietHours("2026-10-14T20:00:00", { startHour: 20, endHour: 20 }), false);
+});
+
+test("dailyLimitReached: null limit means no limit", () => {
+  assert.equal(dailyLimitReached(500, null), false);
+});
+
+test("dailyLimitReached: reached at or above the limit", () => {
+  assert.equal(dailyLimitReached(29, 30), false);
+  assert.equal(dailyLimitReached(30, 30), true);
+  assert.equal(dailyLimitReached(45, 30), true);
+});
+
+const basePlayArgs = {
+  familyEnabled: true,
+  kidEnabled: true,
+  now: "2026-10-14T12:00:00",
+  quietHours: null,
+  minutesPlayedToday: 0,
+  dailyPlayMinutes: null,
+  staminaCharge: 5,
+  costPerEntry: 1,
+};
+
+test("canPlayNow: flag-off beats every other reason", () => {
+  const result = canPlayNow({ ...basePlayArgs, familyEnabled: false, kidEnabled: false });
+  assert.deepEqual(result, { ok: false, reason: "flag-off" });
+});
+
+test("canPlayNow: kid-disabled, even with the family flag on", () => {
+  const result = canPlayNow({ ...basePlayArgs, kidEnabled: false });
+  assert.deepEqual(result, { ok: false, reason: "kid-disabled" });
+});
+
+test("canPlayNow: quiet hours block play even with charge and time available", () => {
+  const result = canPlayNow({ ...basePlayArgs, now: "2026-10-14T21:00:00", quietHours: { startHour: 20, endHour: 7 } });
+  assert.deepEqual(result, { ok: false, reason: "quiet-hours" });
+});
+
+test("canPlayNow: daily limit blocks play", () => {
+  const result = canPlayNow({ ...basePlayArgs, minutesPlayedToday: 30, dailyPlayMinutes: 30 });
+  assert.deepEqual(result, { ok: false, reason: "daily-limit" });
+});
+
+test("canPlayNow: no stamina charge blocks play", () => {
+  const result = canPlayNow({ ...basePlayArgs, staminaCharge: 0 });
+  assert.deepEqual(result, { ok: false, reason: "no-charge" });
+});
+
+test("canPlayNow: everything clear", () => {
+  assert.deepEqual(canPlayNow(basePlayArgs), { ok: true, reason: null });
 });

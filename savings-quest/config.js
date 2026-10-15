@@ -106,4 +106,29 @@ export const CONFIG = {
   WORLD_HERO_SPEED: 160, // px/sec
   WORLD_CREATURE_SPEED: 40, // px/sec, wandering roam speed
   WORLD_INTERACT_RADIUS: 48, // px, how close the hero must be to interact
+
+  // ---------------------------------------------------------------------
+  // XP RATE PRESETS — Stage 5 per-child control. Multiplies Save XP only
+  // (the core driver); never negative, never actually punishing even on
+  // "Challenging" — it's slower growth, not a penalty, per the
+  // never-shame rule.
+  // ---------------------------------------------------------------------
+  XP_RATE_PRESETS: { gentle: 1.5, standard: 1.0, challenging: 0.75 },
+  DEFAULT_XP_RATE_PRESET: "standard",
+
+  // ---------------------------------------------------------------------
+  // PARENT MATCH — optional, per-child, game-only. When enabled, Save XP
+  // is multiplied by (1 + parentMatchRate). This NEVER moves or matches
+  // real money — it's purely an extra XP multiplier a parent can opt
+  // into, same as rule #1/#2 (game never drives or touches real money).
+  // ---------------------------------------------------------------------
+  PARENT_MATCH_DEFAULT_RATE: 1.0,
+
+  // ---------------------------------------------------------------------
+  // FAMILY QUEST — a shared, family-wide savings target (sum of every
+  // kid's real Save total). Parent-editable; reaching it unlocks a
+  // family-wide cosmetic via unlocks.js's existing "familyQuest" unlock
+  // type, exactly like an individual goal's milestones.
+  // ---------------------------------------------------------------------
+  FAMILY_QUEST_DEFAULT_TARGET: 200,
 };

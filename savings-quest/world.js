@@ -25,6 +25,7 @@ import {
   checkCoinOrderPuzzle,
   checkNeedsWantsSort,
   checkBossSequence,
+  canPlayNow,
 } from "./world-engine.js";
 import { CONFIG } from "./config.js";
 
@@ -221,7 +222,7 @@ function getRegionSceneClass() {
     });
 
     this.chestSprites = (this.opts.regionDef.chests || []).map((c) => {
-      const opened = this.opts.worldState.chestsOpened.includes(c.id);
+      const opened = this.opts.worldState.chestsOpened.some((e) => e.id === c.id);
       const sprite = this.add.image(c.x, c.y, opened ? "chest-open" : "chest-closed");
       sprite.chestDef = c;
       sprite.opened = opened;
@@ -238,12 +239,12 @@ function getRegionSceneClass() {
     if (this.opts.puzzleDef) {
       this.puzzleSprite = this.add.image(100, height - 90, "puzzle-pedestal");
       this.puzzleSprite.puzzleDef = this.opts.puzzleDef;
-      this.puzzleSprite.solved = this.opts.worldState.puzzlesSolved.includes(this.opts.puzzleDef.id);
+      this.puzzleSprite.solved = this.opts.worldState.puzzlesSolved.some((e) => e.id === this.opts.puzzleDef.id);
     }
 
     this.bossSprite = null;
     if (this.opts.bossDef && this.opts.bossUnlocked) {
-      const defeated = this.opts.worldState.bossesDefeated.includes(this.opts.bossDef.id);
+      const defeated = this.opts.worldState.bossesDefeated.some((e) => e.id === this.opts.bossDef.id);
       this.bossSprite = this.add.image(width / 2, 70, defeated ? "boss-calm" : "boss");
       this.bossSprite.bossDef = this.opts.bossDef;
       this.bossSprite.defeated = defeated;
@@ -422,6 +423,8 @@ function getRegionSceneClass() {
 export function createWorld({ store, catalogs, buildHeroContext }) {
   let game = null;
   let phaserLoadPromise = null;
+  let activeSession = null; // { kidId, startedAt } — flushed to store.recordPlaySession on every teardown
+  let restCheckInterval = null; // Stage 5: periodic server-side-equivalent re-check while playing
 
   function loadPhaser() {
     if (window.Phaser) return Promise.resolve(window.Phaser);
@@ -449,17 +452,65 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
     return Boolean(store.getGameSettings().family.muted);
   }
 
+  // Counts today's already-recorded play minutes PLUS whatever's
+  // elapsed in the in-progress session (if any) — otherwise a long
+  // live session would never trip the daily limit until after it
+  // ended and got flushed.
+  function minutesPlayedTodayIncludingActive(kidId, now) {
+    const stored = store.getPlayMinutesToday(kidId, now);
+    const live = activeSession ? (Date.now() - new Date(activeSession.startedAt).getTime()) / 60000 : 0;
+    return stored + live;
+  }
+
+  // The non-stamina half of Stage 5's settings enforcement: is the game
+  // even on, on for this kid, outside quiet hours, and under today's
+  // limit? Stamina charge is checked separately (see canEnterRegion)
+  // because it's Stage 4's canvas-specific gate — the Hero Hub
+  // fallback never required it and still doesn't.
+  function sessionAllowed(kidId) {
+    const now = new Date().toISOString();
+    const kidSettings = store.getKidSettings(kidId);
+    return canPlayNow({
+      familyEnabled: store.isSavingsQuestEnabled(),
+      kidEnabled: kidSettings.enabled,
+      now,
+      quietHours: kidSettings.quietHours,
+      minutesPlayedToday: minutesPlayedTodayIncludingActive(kidId, now),
+      dailyPlayMinutes: kidSettings.dailyPlayMinutes,
+      staminaCharge: CONFIG.STAMINA_CHARGE_MAX,
+      costPerEntry: 0,
+    });
+  }
+
+  const REASON_MESSAGES = {
+    "flag-off": "Savings Quest isn't turned on yet — ask a parent.",
+    "kid-disabled": "The game is turned off right now — ask a parent to turn it back on.",
+    "quiet-hours": "It's quiet hours right now. Time to rest, hero! Try again later.",
+    "daily-limit": "You've used up today's play time. See you tomorrow!",
+  };
+
   // ---------------- World Gate: stamina charge + daily check-in ----------------
 
   function renderWorldGate(container, kidId) {
     const worldState = store.getWorldState(kidId);
     const heroContext = buildHeroContext(kidId);
-    const canEnter = canEnterRegion(worldState.staminaCharge, CONFIG.STAMINA_CHARGE_COST_PER_ENTRY);
+    const playCheck = sessionAllowed(kidId);
+    const canEnter = playCheck.ok && canEnterRegion(worldState.staminaCharge, CONFIG.STAMINA_CHARGE_COST_PER_ENTRY);
+    const canVisitHub = playCheck.ok;
     const canCheckIn = !worldState.lastCheckInDate || worldState.lastCheckInDate.slice(0, 10) !== new Date().toISOString().slice(0, 10);
 
     const charges = Array.from({ length: CONFIG.STAMINA_CHARGE_MAX }, (_, i) =>
       i < worldState.staminaCharge ? "⚡" : "·",
     ).join(" ");
+
+    let hint;
+    if (!playCheck.ok) {
+      hint = REASON_MESSAGES[playCheck.reason];
+    } else if (!canEnterRegion(worldState.staminaCharge, CONFIG.STAMINA_CHARGE_COST_PER_ENTRY)) {
+      hint = "Your hero is resting. Finish a chore or check in tomorrow for more energy.";
+    } else {
+      hint = "Your hero has enough energy to explore!";
+    }
 
     container.innerHTML = `
       <div class="sq-card sq-world-gate">
@@ -467,18 +518,12 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
         <div class="sq-stamina-row" aria-label="${worldState.staminaCharge} of ${CONFIG.STAMINA_CHARGE_MAX} stamina charges">
           ${charges}
         </div>
-        <p class="sq-world-gate-hint">
-          ${
-            canEnter
-              ? "Your hero has enough energy to explore!"
-              : "Your hero is resting. Finish a chore or check in tomorrow for more energy."
-          }
-        </p>
+        <p class="sq-world-gate-hint">${escapeHtml(hint)}</p>
         <div class="sq-approval-row">
           <button type="button" class="sq-primary-btn" id="sqEnterWorldBtn" ${canEnter ? "" : "disabled"}>Enter the World</button>
           <button type="button" class="sq-decline-btn" id="sqCheckInBtn" ${canCheckIn ? "" : "disabled"}>${canCheckIn ? "Daily Check-In (+2 ⚡)" : "Checked in today ✓"}</button>
         </div>
-        <button type="button" class="sq-herohub-link" id="sqHeroHubBtn">Prefer no map? Visit the Hero Hub instead</button>
+        <button type="button" class="sq-herohub-link" id="sqHeroHubBtn" ${canVisitHub ? "" : "disabled"}>Prefer no map? Visit the Hero Hub instead</button>
       </div>
       <div id="sqWorldBody"></div>
     `;
@@ -489,14 +534,14 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
     });
 
     container.querySelector("#sqHeroHubBtn").addEventListener("click", () => {
-      renderHeroHub(container, kidId);
+      if (canVisitHub) renderHeroHub(container, kidId);
     });
 
     container.querySelector("#sqEnterWorldBtn").addEventListener("click", () => {
-      enterWorld(container, kidId);
+      if (canEnter) enterWorld(container, kidId);
     });
 
-    if (unlockedRegions(heroContext).length === 0) {
+    if (canEnter && unlockedRegions(heroContext).length === 0) {
       container.querySelector("#sqEnterWorldBtn").disabled = true;
       container
         .querySelector("#sqWorldBody")
@@ -505,6 +550,10 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
   }
 
   function enterWorld(container, kidId) {
+    if (!sessionAllowed(kidId).ok) {
+      renderWorldGate(container, kidId);
+      return;
+    }
     if (!canvasSupported()) {
       renderHeroHub(container, kidId);
       return;
@@ -515,7 +564,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
     loadPhaser()
       .then(() => {
         const worldState = store.getWorldState(kidId);
-        if (!canEnterRegion(worldState.staminaCharge, CONFIG.STAMINA_CHARGE_COST_PER_ENTRY)) {
+        if (!sessionAllowed(kidId).ok || !canEnterRegion(worldState.staminaCharge, CONFIG.STAMINA_CHARGE_COST_PER_ENTRY)) {
           renderWorldGate(container, kidId);
           return;
         }
@@ -534,11 +583,11 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
   // ---------------- Phaser game lifecycle + DOM HUD ----------------
 
   function mountGame(container, kidId, regionId) {
-    destroyGame();
+    destroyGame(); // flushes any prior session (e.g. switching regions) before starting a new one
     const heroContext = buildHeroContext(kidId);
     const worldState = store.getWorldState(kidId);
     const regionDef = regionFor(regionId);
-    store.markRegionDiscovered(kidId, regionId);
+    store.markRegionDiscovered(kidId, regionId, new Date().toISOString());
 
     const npcDef = regionDef.npcId ? catalogs.npcLessons.npcs.find((n) => n.id === regionDef.npcId) : null;
     const puzzleDef = regionDef.puzzleId ? catalogs.puzzles.puzzles.find((p) => p.id === regionDef.puzzleId) : null;
@@ -609,14 +658,17 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
         const labels = {
           chest: "Open chest",
           npc: `Talk to ${npcDef ? npcDef.name : "NPC"}`,
-          puzzle: puzzleDef && store.getWorldState(kidId).puzzlesSolved.includes(puzzleDef.id) ? "Puzzle (solved)" : "Try the puzzle",
+          puzzle:
+            puzzleDef && store.getWorldState(kidId).puzzlesSolved.some((e) => e.id === puzzleDef.id)
+              ? "Puzzle (solved)"
+              : "Try the puzzle",
           boss: `Face ${bossDef ? bossDef.name : "the boss"}`,
           landmark: "Visit your goal",
         };
         interactBtn.textContent = labels[nearby.type] || "Interact";
       },
       onOpenChest: (chestDef, sprite) => {
-        const result = store.openChest(kidId, chestDef.id);
+        const result = store.openChest(kidId, chestDef.id, new Date().toISOString());
         if (result.written) {
           playBeep(880, 180, isMuted());
           sceneInstance.markChestOpened(chestDef);
@@ -625,13 +677,13 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       onTalkToNpc: (npcDefArg) => showNpcDialogue(npcDefArg),
       onOpenPuzzle: (puzzleDefArg) =>
         showPuzzleModal(puzzleDefArg, () => {
-          store.solvePuzzle(kidId, puzzleDefArg.id);
+          store.solvePuzzle(kidId, puzzleDefArg.id, new Date().toISOString());
           playBeep(1046, 220, isMuted());
           sceneInstance.markPuzzleSolved();
         }),
       onOpenBoss: (bossDefArg) =>
         showBossModal(bossDefArg, () => {
-          store.defeatBoss(kidId, bossDefArg.id);
+          store.defeatBoss(kidId, bossDefArg.id, new Date().toISOString());
           playBeep(660, 300, isMuted());
           sceneInstance.markBossDefeated();
         }),
@@ -679,9 +731,52 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
     game.events.once("ready", () => {
       game.scene.start("region", sceneOpts);
     });
+
+    // Session tracking + the in-game "time to rest, hero!" re-check
+    // only start once the game has actually, successfully mounted —
+    // never while we're about to fall back to the Hero Hub instead.
+    activeSession = { kidId, startedAt: new Date().toISOString() };
+    restCheckInterval = setInterval(() => {
+      const check = sessionAllowed(kidId);
+      if (!check.ok) showRestPrompt(container, kidId, check.reason);
+    }, 30000);
+  }
+
+  // Gently interrupts an in-progress session the moment settings
+  // enforcement (quiet hours / daily limit / kid disabled / flag off)
+  // makes it no longer allowed — "server-side" here means this check
+  // runs against stored settings and real elapsed time, not anything
+  // the kid's own client-side clock display could be used to fool.
+  function showRestPrompt(container, kidId, reason) {
+    destroyGame();
+    const overlay = baseOverlay(
+      `
+      <div class="sq-levelup-card">
+        <div style="font-size:2.5rem;" aria-hidden="true">😴</div>
+        <h2>Time to rest, hero!</h2>
+        <p>${escapeHtml(REASON_MESSAGES[reason] || "It's time for a break.")}</p>
+        <button type="button" class="sq-levelup-done-btn">Okay</button>
+      </div>
+    `,
+      "Time to rest, hero!",
+    );
+    const btn = overlay.querySelector("button");
+    btn.addEventListener("click", () => {
+      overlay.remove();
+      renderWorldGate(container, kidId);
+    });
+    btn.focus();
   }
 
   function destroyGame() {
+    if (restCheckInterval) {
+      clearInterval(restCheckInterval);
+      restCheckInterval = null;
+    }
+    if (activeSession) {
+      store.recordPlaySession(activeSession.kidId, activeSession.startedAt, new Date().toISOString());
+      activeSession = null;
+    }
     if (game) {
       game.destroy(true);
       game = null;
@@ -729,7 +824,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
           ${
             puzzleDef
               ? `<button type="button" class="sq-decline-btn" data-action="puzzle">${
-                  worldState.puzzlesSolved.includes(puzzleDef.id) ? "Puzzle (solved) ✓" : "Try the puzzle"
+                  worldState.puzzlesSolved.some((e) => e.id === puzzleDef.id) ? "Puzzle (solved) ✓" : "Try the puzzle"
                 }</button>`
               : ""
           }
@@ -737,7 +832,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
             .map(
               (c) =>
                 `<button type="button" class="sq-decline-btn" data-action="chest" data-chest-id="${c.id}">
-                  ${worldState.chestsOpened.includes(c.id) ? "Chest opened ✓" : "Open a chest"}
+                  ${worldState.chestsOpened.some((e) => e.id === c.id) ? "Chest opened ✓" : "Open a chest"}
                 </button>`,
             )
             .join("")}
@@ -745,7 +840,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
             bossDef
               ? bossUnlocked
                 ? `<button type="button" class="sq-decline-btn" data-action="boss">${
-                    worldState.bossesDefeated.includes(bossDef.id) ? `${escapeHtml(bossDef.name)} calmed ✓` : `Face ${escapeHtml(bossDef.name)}`
+                    worldState.bossesDefeated.some((e) => e.id === bossDef.id) ? `${escapeHtml(bossDef.name)} calmed ✓` : `Face ${escapeHtml(bossDef.name)}`
                   }</button>`
                 : `<span class="sq-item-req">${escapeHtml(describeUnlockRequirement(bossDef, heroContext))}</span>`
               : ""
@@ -761,7 +856,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       card.querySelectorAll("[data-action='npc']").forEach((b) => b.addEventListener("click", () => showNpcDialogue(npcDef)));
       card.querySelectorAll("[data-action='puzzle']").forEach((b) =>
         b.addEventListener("click", () => {
-          if (store.getWorldState(kidId).puzzlesSolved.includes(puzzleDef.id)) return;
+          if (store.getWorldState(kidId).puzzlesSolved.some((e) => e.id === puzzleDef.id)) return;
           showPuzzleModal(puzzleDef, () => {
             store.solvePuzzle(kidId, puzzleDef.id);
             playBeep(1046, 220, isMuted());
@@ -779,7 +874,7 @@ export function createWorld({ store, catalogs, buildHeroContext }) {
       );
       card.querySelectorAll("[data-action='boss']").forEach((b) =>
         b.addEventListener("click", () => {
-          if (store.getWorldState(kidId).bossesDefeated.includes(bossDef.id)) return;
+          if (store.getWorldState(kidId).bossesDefeated.some((e) => e.id === bossDef.id)) return;
           showBossModal(bossDef, () => {
             store.defeatBoss(kidId, bossDef.id);
             playBeep(660, 300, isMuted());

@@ -12,7 +12,11 @@
 
 export function createHandlers(store) {
   function onSplitCompleted({ round, priorSaveTotal, goal }) {
-    if (!store.isSavingsQuestEnabled()) return null;
+    // Family-wide flag first, then Stage 5's per-child override — a
+    // parent can turn the whole module on but still disable it for one
+    // specific kid, and that kid's events must no-op exactly like the
+    // family flag being off does.
+    if (!store.isSavingsQuestEnabled() || !store.getKidSettings(round.kidId).enabled) return null;
 
     const now = round.completedAt || new Date().toISOString();
     const sourceEventId = `mm_round_${round.id}`;
@@ -52,7 +56,7 @@ export function createHandlers(store) {
   }
 
   function onChoreApproved(completion) {
-    if (!store.isSavingsQuestEnabled()) return null;
+    if (!store.isSavingsQuestEnabled() || !store.getKidSettings(completion.kidId).enabled) return null;
 
     const now = new Date().toISOString();
     const sourceEventId = `mm_chore_${completion.id}`;

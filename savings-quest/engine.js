@@ -125,9 +125,14 @@ export function computeNetSaveGrowth({
 // XP calculations per track
 // ---------------------------------------------------------------------
 
-export function computeSaveXp({ netAmount, streakWeeks }) {
+// rateMultiplier folds in Stage 5's per-child XP-rate preset
+// (Gentle/Standard/Challenging) and, if enabled, the parent-match
+// bonus — both layered on top of the streak multiplier, never
+// replacing it. Defaults to 1 so every pre-Stage-5 caller/test is
+// unaffected.
+export function computeSaveXp({ netAmount, streakWeeks, rateMultiplier = 1 }) {
   const multiplier = streakMultiplier(streakWeeks);
-  return Math.round(netAmount * CONFIG.SAVE_XP_PER_DOLLAR * multiplier);
+  return Math.round(netAmount * CONFIG.SAVE_XP_PER_DOLLAR * multiplier * rateMultiplier);
 }
 
 export function computeHeartXp(giveAmount) {

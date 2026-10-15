@@ -28,6 +28,26 @@ test("onSplitCompleted no-ops entirely when the feature flag is off", () => {
   assert.equal(store.getHero("kid-1").totalXp, 0);
 });
 
+test("onSplitCompleted no-ops for a specific kid the parent disabled, even with the family flag on", () => {
+  const { store, handlers } = freshSetup();
+  store.setKidSettings("kid-1", { enabled: false });
+  const result = handlers.onSplitCompleted({
+    round: { id: 1, kidId: "kid-1", save: 10, give: 0, spend: 0, completedAt: "2026-10-14T00:00:00.000Z" },
+    priorSaveTotal: 0,
+    goal: null,
+  });
+  assert.equal(result, null);
+  assert.equal(store.getXpLedger().length, 0);
+});
+
+test("onChoreApproved no-ops for a specific kid the parent disabled", () => {
+  const { store, handlers } = freshSetup();
+  store.setKidSettings("kid-1", { enabled: false });
+  const result = handlers.onChoreApproved({ id: "c1", kidId: "kid-1", price: 5 });
+  assert.equal(result, null);
+  assert.equal(store.getXpLedger().length, 0);
+});
+
 test("onSplitCompleted writes one ledger entry per non-zero bucket", () => {
   const { store, handlers } = freshSetup();
   handlers.onSplitCompleted({
