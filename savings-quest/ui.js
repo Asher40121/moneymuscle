@@ -274,14 +274,19 @@ export function createUi({ store, catalogs }) {
   }
 
   function renderGoalFlow(container, kidId) {
+    // A goal already at or past its target gets archived + cleared here
+    // too (not just in index.html's own render paths) — a kid who only
+    // ever looks at the Savings Quest screen would otherwise never
+    // trigger that safety net, and would keep seeing a stale, completed
+    // goal showing over 100% forever. See checkAndCompleteGoalIfReached.
+    if (window.checkAndCompleteGoalIfReached) window.checkAndCompleteGoalIfReached(kidId);
     const mmGoal = window.getGoal ? window.getGoal(kidId) : null;
     const proposal = store.getGoalProposal(kidId);
 
     if (mmGoal) {
-      const saveTotal =
-        window.computeTotals && window.roundsForKid
-          ? window.computeTotals(window.roundsForKid(kidId)).save
-          : 0;
+      // Progress toward THIS goal specifically, not the kid's raw
+      // lifetime Save total — see kidGoalProgress/getGoalProgress.
+      const saveTotal = kidGoalProgress(kidId);
       const pct = Math.min(100, Math.round((saveTotal / mmGoal.target) * 100));
       const path = computeMilestonePathState(store.getMilestones(kidId).map((m) => m.threshold));
 
